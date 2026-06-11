@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Company Document Vault</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#1d1340; --panel:#ffffff; --panel-2:#f6f4fc; --ink:#1a1430;
+    --muted:#6b6b82; --line:#ece8f6; --brand:#7c3aed; --brand-d:#6d28d9;
+    --accent:#f97316; --accent-d:#ea6a0a; --radius:16px;
+    --ok:#0f9d6e; --warn:#d97706; --danger:#dc2b46;
+    --shadow:0 1px 2px rgba(26,20,48,.06),0 10px 30px rgba(26,20,48,.10);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:var(--panel-2); color:var(--ink); -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;cursor:pointer}
+  input,select,textarea{font-family:inherit;font-size:14px}
+  .hidden{display:none !important}
+
+  h1,h2,h3,.brand-name,.btn,.content-head h2,.modal-head h3{font-family:'Poppins','Inter',sans-serif}
+
+  .brand{display:flex;align-items:center;gap:11px}
+  .brand-mark{
+    width:34px;height:34px;border-radius:10px;display:grid;place-items:center;
+    background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;font-size:16px;
+  }
+  .brand-name{font-weight:700;font-size:16px}
+  .spacer{flex:1}
+  .btn{
+    border:none;border-radius:999px;padding:11px 18px;font-weight:600;font-size:14px;
+    background:#f97316;color:#fff;transition:all .15s;
+    box-shadow:0 4px 12px rgba(249,115,22,.25);cursor:pointer;
+  }
+  .btn:hover{background:#ea6a0a}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .btn-block{width:100%}
+  .btn-violet{background:#7c3aed;box-shadow:0 4px 12px rgba(124,58,237,.28)}
+  .btn-violet:hover{background:#6d28d9}
+  .btn-ghost{background:var(--panel-2);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+  .btn-ghost:hover{background:#eaeef6}
+  .btn-sm{padding:8px 14px;font-size:13px;border-radius:999px;box-shadow:none}
+  .btn-danger{background:#dc2b46;box-shadow:none}.btn-danger:hover{background:#b91f38}
+  .btn-lg{padding:14px 26px;font-size:15.5px}
+
+  .lp{min-height:100vh;background:var(--panel-2);display:flex;flex-direction:column}
+  .lp-bar{background:linear-gradient(90deg,#7c3aed,#9d5cf5);color:#fff;text-align:center;font-size:13.5px;font-weight:500;padding:11px 16px}
+  .lp-nav{max-width:1040px;width:calc(100% - 32px);margin:18px auto 0;background:#fff;border-radius:16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;padding:12px 20px}
+  .lp-hero{flex:1;max-width:820px;margin:0 auto;padding:64px 24px 36px;text-align:center}
+  .lp-hero h1{font-size:clamp(33px,6vw,56px);line-height:1.06;letter-spacing:-1.4px;margin:0 0 18px;color:var(--ink)}
+  .lp-hero h1 .grad{background:linear-gradient(90deg,#f97316,#fdba74);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lp-hero p.lead{font-size:clamp(16px,2.3vw,20px);color:var(--muted);line-height:1.55;max-width:600px;margin:0 auto 28px}
+  .lp-pills{display:flex;gap:11px;justify-content:center;flex-wrap:wrap;margin-bottom:32px}
+  .lp-pill{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:9px 16px;font-size:14px;font-weight:500}
+  .lp-pill .ck{width:20px;height:20px;border-radius:50%;background:#7c3aed;color:#fff;display:grid;place-items:center;font-size:11px}
+  .lp-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .lp-features{max-width:1000px;margin:6px auto 56px;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+  .lp-feat{background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px}
+  .lp-feat .ic{font-size:26px;margin-bottom:10px}
+  .lp-feat h3{margin:0 0 6px;font-size:17px}
+  .lp-feat p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
+
+  #authPage{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;position:relative;
+    background:
+      radial-gradient(1200px 600px at 80% -10%,rgba(124,58,237,.30),transparent),
+      radial-gradient(900px 500px at -10% 110%,rgba(249,115,22,.18),transparent),
+      #1d1340;
+  }
+  .auth-back{
+    position:absolute;top:22px;left:22px;background:rgba(255,255,255,.12);color:#fff;
+    border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:9px 16px;font-weight:600;font-size:13px;cursor:pointer;
+  }
+  .auth-back:hover{background:rgba(255,255,255,.2)}
+  .auth-card{width:100%;max-width:400px;background:#fff;border-radius:18px;padding:32px 30px;box-shadow:0 24px 60px rgba(0,0,0,.32)}
+  .auth-card h1{font-size:22px;margin:8px 0 4px;text-align:center}
+  .auth-card .sub{text-align:center;margin:0 0 20px;color:var(--muted);font-size:13.5px}
+  .gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px;border:1px solid var(--line);border-radius:999px;background:#fff;font-weight:600;font-size:14.5px;color:var(--ink);cursor:pointer}
+  .gbtn:hover{background:var(--panel-2)}
+  .divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12.5px;margin:18px 0}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
+  .field input,.field select,.field textarea{
+    width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#fbfcfe;
+    transition:border .15s,box-shadow .15s;
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.15)}
+  .field textarea{resize:vertical;min-height:70px}
+  .pwd-toggle{position:relative}
+  .pwd-toggle input{padding-right:38px}
+  .pwd-toggle .toggle-btn{
+    position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;
+    color:var(--muted);font-size:18px;cursor:pointer;padding:0;
+  }
+  .auth-msg{font-size:13px;margin-top:12px;min-height:18px}
+  .auth-msg.err{color:#dc2b46}.auth-msg.ok{color:#0f9d6e}
+  .toggle-auth{margin-top:16px;text-align:center;font-size:13px;color:var(--muted)}
+  .toggle-auth a{color:#7c3aed;font-weight:600;text-decoration:none;cursor:pointer}
+  .forgot-pwd{text-align:center;margin-top:10px}
+  .forgot-pwd a{color:#7c3aed;font-size:13px;text-decoration:none;cursor:pointer}
+
+  #appView{min-height:100vh;display:flex;flex-direction:column}
+  header.topbar{
+    background:var(--panel);border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:14px;padding:12px 20px;position:sticky;top:0;z-index:20;
+  }
+  .company-chip{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--panel-2);border-radius:999px;font-weight:600;font-size:13px;cursor:pointer;border:1px solid var(--line)}
+  .company-chip:hover{background:#eaeef6}
+  .userchip{display:flex;align-items:center;gap:9px}
+  .avatar{
+    width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);
+    color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;
+  }
+  .userchip .meta{line-height:1.2}
+  .userchip .nm{font-size:13.5px;font-weight:600}
+  .userchip .rl{font-size:11px;color:var(--muted);text-transform:capitalize}
+
+  .layout{flex:1;display:flex;max-width:1240px;width:100%;margin:0 auto;padding:20px;gap:20px}
+  aside.side{width:240px;flex-shrink:0;overflow-y:auto;max-height:calc(100vh - 100px)}
+  .side-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:16px}
+  .side-card h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 10px}
+  .tree{display:flex;flex-direction:column;gap:0}
+  .tree-node{
+    border:none;background:none;padding:8px 10px;border-radius:8px;
+    font-size:13.5px;color:var(--ink);display:flex;justify-content:space-between;align-items:center;
+    text-align:left;cursor:pointer;transition:background .15s;
+  }
+  .tree-node:hover{background:var(--panel-2)}
+  .tree-node.active{background:rgba(124,58,237,.1);color:#7c3aed;font-weight:600}
+
+  main.content{flex:1;min-width:0}
+  .content-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .content-head h2{margin:0;font-size:21px;letter-spacing:-.4px}
+  .search{
+    flex:1;min-width:180px;max-width:340px;position:relative;
+  }
+  .search input{
+    width:100%;padding:10px 12px 10px 36px;border:1px solid var(--line);
+    border-radius:10px;background:var(--panel);
+  }
+  .search input:focus{outline:none;border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.12)}
+  .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted)}
+
+  .doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+  .doc-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:15px;display:flex;flex-direction:column;gap:10px;transition:box-shadow .15s,transform .15s;
+  }
+  .doc-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+  .doc-top{display:flex;gap:11px;align-items:flex-start}
+  .file-ic{
+    width:42px;height:42px;border-radius:10px;flex-shrink:0;display:grid;place-items:center;
+    font-size:12px;font-weight:700;color:#fff;text-transform:uppercase;
+  }
+  .doc-name{font-weight:600;font-size:14px;line-height:1.3;word-break:break-word}
+  .doc-desc{font-size:12.5px;color:var(--muted);line-height:1.4}
+  .doc-meta{font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:9px;line-height:1.5}
+  .doc-actions{display:flex;gap:8px}
+  .doc-actions .btn{flex:1}
+
+  .empty{
+    text-align:center;padding:60px 20px;color:var(--muted);
+    background:var(--panel);border:1px dashed var(--line);border-radius:var(--radius);
+  }
+  .empty .big{font-size:34px;margin-bottom:8px}
+
+  .modal-bg{
+    position:fixed;inset:0;background:rgba(15,23,41,.5);backdrop-filter:blur(2px);
+    display:flex;align-items:center;justify-content:center;padding:20px;z-index:60;
+  }
+  .modal{
+    background:var(--panel);border-radius:16px;width:100%;max-width:480px;
+    box-shadow:0 20px 60px rgba(16,24,43,.3);max-height:90vh;overflow:auto;
+  }
+  .modal.wide{max-width:680px}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line)}
+  .modal-head h3{margin:0;font-size:17px}
+  .modal-body{padding:22px}
+  .modal-foot{padding:16px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+  .x-btn{border:none;background:none;font-size:22px;color:var(--muted);line-height:1;padding:2px 6px;border-radius:6px;cursor:pointer}
+  .x-btn:hover{background:var(--panel-2)}
+  .filezone{
+    border:2px dashed var(--line);border-radius:12px;padding:24px;text-align:center;
+    color:var(--muted);cursor:pointer;transition:border .15s,background .15s;
+  }
+  .filezone:hover,.filezone.drag{border-color:#7c3aed;background:rgba(124,58,237,.04)}
+  .filezone.has{border-style:solid;border-color:#0f9d6e;color:var(--ink);background:rgba(15,157,110,.05)}
+
+  #toast{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-size:13.5px;
+    opacity:0;transition:.25s;z-index:80;pointer-events:none;box-shadow:var(--shadow);max-width:90vw;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.err{background:#dc2b46}#toast.ok{background:#0f9d6e}
+  
+  .loader{
+    width:18px;height:18px;border:2px solid rgba(124,58,237,.25);border-top-color:#7c3aed;
+    border-radius:50%;display:inline-block;animation:spin .7s linear infinite;
+  }
+  #fullLoad{position:fixed;inset:0;background:#1d1340;display:grid;place-items:center;z-index:100;color:#fff}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media(max-width:820px){
+    .layout{flex-direction:column;padding:14px}
+    aside.side{width:100%;max-height:auto}
+    .topbar{flex-wrap:wrap}
+    .userchip .meta{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div id="fullLoad"><div style="text-align:center"><div class="loader" style="width:30px;height:30px"></div><div style="margin-top:14px;font-size:14px;opacity:.8">Loading vault…</div></div></div>
+
+<div id="loginView" class="hidden">
+  <div class="lp">
+    <div class="lp-bar">🔒 Secure cloud storage for all your company documents</div>
+    <div class="lp-nav">
+      <div class="brand"><div class="brand-mark">🗄️</div><div class="brand-name">Document Vault</div></div>
+      <div class="spacer"></div>
+      <button class="btn btn-violet btn-sm" onclick="openLogin('login')">Sign in</button>
+    </div>
+    <div class="lp-hero">
+      <h1>All your company documents,<br><span class="grad">in one secure vault</span></h1>
+      <p class="lead">Upload, organize and download important files for every company you manage — with secure login and role-based access.</p>
+      <div class="lp-pills">
+        <span class="lp-pill"><span class="ck">✓</span> Multi-company</span>
+        <span class="lp-pill"><span class="ck">✓</span> Nested folders</span>
+        <span class="lp-pill"><span class="ck">✓</span> Instant downloads</span>
+      </div>
+      <div class="lp-cta">
+        <button class="btn btn-lg" onclick="openLogin('signup')">Get Started</button>
+        <button class="btn btn-ghost btn-lg" onclick="openLogin('login')">Sign in →</button>
+      </div>
+    </div>
+    <div class="lp-features">
+      <div class="lp-feat"><div class="ic">🏢</div><h3>Multiple companies</h3><p>Keep each company's files separate and switch between them instantly.</p></div>
+      <div class="lp-feat"><div class="ic">📁</div><h3>Nested folders</h3><p>Create multi-level folder structures: Legal > Contracts > 2024 > Q1</p></div>
+      <div class="lp-feat"><div class="ic">🔐</div><h3>Role-based access</h3><p>Super admin, admin and viewer roles control who can manage files.</p></div>
+    </div>
+  </div>
+</div>
+
+<div id="authPage" class="hidden">
+  <button class="auth-back" onclick="show('loginView')">← Back</button>
+  <div class="auth-card">
+    <div class="brand" style="justify-content:center;margin-bottom:6px">
+      <div class="brand-mark">🗄️</div>
+      <div class="brand-name">Document Vault</div>
+    </div>
+    <h1 id="authTitle">Welcome back</h1>
+    <p class="sub" id="authSub">Sign in to access your documents.</p>
+    <button class="gbtn" onclick="googleSignIn()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8a12 12 0 1 1 7.9-21l5.7-5.7A20 20 0 1 0 24 44c11 0 20-8 20-20 0-1.3-.1-2.5-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8A12 12 0 0 1 24 12c3 0 5.8 1.2 7.9 3l5.7-5.7A20 20 0 0 0 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2A12 12 0 0 1 12.7 28l-6.5 5A20 20 0 0 0 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3a12 12 0 0 1-4.1 5.6l6.2 5.2C39 38 44 32 44 24c0-1.3-.1-2.5-.4-3.5z"/></svg>
+      Continue with Google
+    </button>
+    <div class="divider">or use email</div>
+    <div class="field" id="nameField" style="display:none">
+      <label>Full name</label>
+      <input id="authName" type="text" placeholder="Your name" autocomplete="name" />
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input id="authEmail" type="email" placeholder="you@company.com" autocomplete="email" />
+    </div>
+    <div class="field pwd-toggle">
+      <label>Password</label>
+      <input id="authPass" type="password" placeholder="••••••••" autocomplete="current-password" />
+      <button type="button" class="toggle-btn" onclick="togglePassword()">👁️</button>
+    </div>
+    <button class="btn btn-violet btn-block" id="authBtn" onclick="doAuth()">Sign in</button>
+    <div class="auth-msg" id="authMsg"></div>
+    <div class="forgot-pwd"><a onclick="openForgotPassword()">Forgot password?</a></div>
+    <div class="toggle-auth" id="toggleAuth">New here? <a onclick="switchMode()">Create an account</a></div>
+  </div>
+</div>
+
+<div class="modal-bg hidden" id="forgotPwdModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Reset your password</h3><button class="x-btn" onclick="closeModal('forgotPwdModal')">×</button></div>
+    <div class="modal-body">
+      <p style="margin:0 0 14px;color:var(--muted);font-size:13px">Enter your email to receive a password reset link.</p>
+      <div class="field">
+        <label>Email</label>
+        <input id="resetEmail" type="email" placeholder="you@company.com" />
+      </div>
+      <button class="btn btn-violet btn-block" onclick="sendPasswordReset()">Send reset link</button>
+      <div class="auth-msg" id="resetMsg"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg hidden" id="companySelectorModal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-head"><h3>Select a company</h3></div>
+    <div class="modal-body">
+      <div id="companySelectorList"></div>
+    </div>
+  </div>
+</div>
+
+<div id="appView" class="hidden">
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark" style="width:32px;height:32px;font-size:16px">🗄️</div><div class="brand-name">Document Vault</div></div>
+    <div class="company-chip" onclick="openCompanySelector()">
+      📁 <span id="selectedCompanyName">—</span> ▼
+    </div>
+    <div class="spacer"></div>
+    <div class="userchip">
+      <div class="meta" style="text-align:right">
+        <div class="nm" id="uName">—</div>
+        <div class="rl" id="uRole">—</div>
+      </div>
+      <div class="avatar" id="uAvatar">?</div>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="side">
+      <div class="side-card">
+        <h3>Folders</h3>
+        <div class="tree" id="folderTree"></div>
+      </div>
+      <div class="side-card" id="adminCard" style="display:none">
+        <h3>Admin</h3>
+        <div class="tree">
+          <button class="tree-node" onclick="alert('Manage companies in Firebase Console')">🏢 Companies</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="content-head">
+        <h2 id="contentTitle">Documents</h2>
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="searchInput" type="text" placeholder="Search documents…" oninput="renderContent()" />
+        </div>
+        <button class="btn" id="uploadBtn" onclick="openUpload()" style="display:none">+ Upload</button>
+        <button class="btn btn-ghost btn-sm" id="newFolderBtn" onclick="openNewFolder()" style="display:none">+ Folder</button>
+      </div>
+      <div id="contentArea"></div>
+    </main>
+  </div>
+</div>
+
+<div class="modal-bg hidden" id="uploadModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Upload document</h3><button class="x-btn" onclick="closeModal('uploadModal')">×</button></div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Folder path</label>
+        <div id="folderPath" style="padding:10px;background:var(--panel-2);border-radius:10px;font-size:13px;color:var(--muted)">Root</div>
+      </div>
+      <div class="field">
+        <label>File</label>
+        <div class="filezone" id="fileZone" onclick="document.getElementById('fileInput').click()">
+          <div id="fileZoneText">Click to choose a file (max ~25 MB)</div>
+        </div>
+        <input id="fileInput" type="file" style="display:none" onchange="onFilePick()" />
+      </div>
+      <div class="field">
+        <label>Description <span style="color:var(--muted);font-weight:400">(optional)</span></label>
+        <textarea id="upDesc" placeholder="Short note about this document"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('uploadModal')">Cancel</button>
+      <button class="btn" id="upSubmit" onclick="submitUpload()">Upload</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyA1dc3sNuyJo9BK5JguaevvY5nSQdsSvZk",
+  authDomain: "kasera-delegation.firebaseapp.com",
+  projectId: "kasera-delegation",
+  storageBucket: "kasera-delegation.firebasestorage.app",
+  messagingSenderId: "117646348596",
+  appId: "1:117646348596:web:07a7eaf7e1cdb32a0e5561"
+};
+
+const APPS_SCRIPT_URL = "PASTE_APPS_SCRIPT_EXEC_URL";
+const SUPER_ADMIN_EMAILS = ["ravi@kaseraindustries.in", "rsheartfulness@gmail.com"];
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+const COL_COMPANIES = "vault_companies";
+const COL_USERS = "vault_users";
+
+let CURRENT = null, companies = [], selectedCompanyId = null, selectedFolderId = null, pickedFile = null, folderTree = [], documents = [];
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+let authMode = "login";
+
+function togglePassword(){document.getElementById("authPass").type = document.getElementById("authPass").type === "password" ? "text" : "password";}
+function openLogin(mode){authMode = mode || "login"; applyAuthMode(); show("authPage");}
+function applyAuthMode(){
+  const signup = authMode === "signup";
+  document.getElementById("authTitle").textContent = signup ? "Create your account" : "Welcome back";
+  document.getElementById("authSub").textContent = signup ? "Set up your access to the vault." : "Sign in to access your documents.";
+  document.getElementById("nameField").style.display = signup ? "block" : "none";
+  document.getElementById("authBtn").textContent = signup ? "Create account" : "Sign in";
+  document.getElementById("toggleAuth").innerHTML = signup ? 'Already have an account? <a onclick="switchMode()">Sign in</a>' : 'New here? <a onclick="switchMode()">Create an account</a>';
+  document.querySelector(".forgot-pwd").style.display = signup ? "none" : "block";
+  setAuthMsg("");
+}
+function switchMode(){authMode = authMode === "login" ? "signup" : "login"; applyAuthMode();}
+async function googleSignIn(){try{await auth.signInWithPopup(googleProvider);}catch(e){setAuthMsg(prettyAuthErr(e), "err");}}
+async function doAuth(){
+  const email = document.getElementById("authEmail").value.trim(), pass = document.getElementById("authPass").value, name = document.getElementById("authName").value.trim();
+  if(!email || !pass){setAuthMsg("Enter email and password.","err"); return;}
+  const btn = document.getElementById("authBtn");
+  btn.disabled = true; const old = btn.innerHTML; btn.innerHTML = '<span class="loader"></span>';
+  try{
+    if(authMode === "signup"){
+      if(!name){setAuthMsg("Enter your name.","err"); btn.disabled=false; btn.innerHTML=old; return;}
+      const cred = await auth.createUserWithEmailAndPassword(email, pass);
+      const isSuper = SUPER_ADMIN_EMAILS.map(e=>e.toLowerCase()).includes(email.toLowerCase());
+      await db.collection(COL_USERS).doc(cred.user.uid).set({email, name, role: isSuper ? "superadmin" : "viewer", companies: [], createdAt: Date.now()});
+    }else{await auth.signInWithEmailAndPassword(email, pass);}
+  }catch(e){setAuthMsg(prettyAuthErr(e), "err"); btn.disabled = false; btn.innerHTML = old;}
+}
+function openForgotPassword(){setAuthMsg(""); document.getElementById("resetEmail").value = document.getElementById("authEmail").value; show_modal("forgotPwdModal");}
+async function sendPasswordReset(){
+  const email = document.getElementById("resetEmail").value.trim();
+  if(!email){document.getElementById("resetMsg").textContent = "Enter your email."; document.getElementById("resetMsg").className = "auth-msg err"; return;}
+  const btn = event.target; btn.disabled = true;
+  try{
+    await auth.sendPasswordResetEmail(email);
+    document.getElementById("resetMsg").textContent = "Reset link sent! Check your email.";
+    document.getElementById("resetMsg").className = "auth-msg ok";
+    setTimeout(()=>{closeModal("forgotPwdModal");}, 2000);
+  }catch(e){document.getElementById("resetMsg").textContent = prettyAuthErr(e); document.getElementById("resetMsg").className = "auth-msg err";}
+  finally{btn.disabled = false;}
+}
+function setAuthMsg(t, kind){const el = document.getElementById("authMsg"); el.textContent = t || ""; el.className = "auth-msg" + (kind ? " "+kind : "");}
+function prettyAuthErr(e){const m = (e && e.code) || ""; if(m.includes("email-already-in-use")) return "Email already has account."; if(m.includes("invalid-credential")||m.includes("wrong-password")) return "Wrong email or password."; if(m.includes("weak-password")) return "Password min 6 chars."; return (e && e.message) || "Error occurred.";}
+function logout(){auth.signOut();}
+
+auth.onAuthStateChanged(async (user)=>{
+  if(!user){CURRENT = null; show("loginView"); document.getElementById("fullLoad").classList.add("hidden"); return;}
+  let snap = await db.collection(COL_USERS).doc(user.uid).get();
+  if(!snap.exists){
+    const isSuper = SUPER_ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((user.email||"").toLowerCase());
+    await db.collection(COL_USERS).doc(user.uid).set({email:user.email, name:user.displayName || user.email.split("@")[0], role:isSuper?"superadmin":"viewer", companies:[], createdAt:Date.now()});
+    snap = await db.collection(COL_USERS).doc(user.uid).get();
+  }
+  CURRENT = {uid:user.uid, ...snap.data()};
+  await bootApp();
+});
+
+async function bootApp(){
+  document.getElementById("fullLoad").classList.add("hidden");
+  show("appView");
+  document.getElementById("uName").textContent = CURRENT.name || CURRENT.email;
+  document.getElementById("uRole").textContent = CURRENT.role;
+  document.getElementById("uAvatar").textContent = (CURRENT.name||CURRENT.email||"?").trim()[0].toUpperCase();
+  const isSuper = CURRENT.role === "superadmin";
+  document.getElementById("adminCard").style.display = isSuper ? "block" : "none";
+  document.getElementById("uploadBtn").style.display = (CURRENT.role === "superadmin" || CURRENT.role === "admin") ? "inline-block" : "none";
+  document.getElementById("newFolderBtn").style.display = (CURRENT.role === "superadmin" || CURRENT.role === "admin") ? "inline-block" : "none";
+  await loadCompanies();
+}
+
+async function loadCompanies(){
+  const qs = await db.collection(COL_COMPANIES).get();
+  let all = qs.docs.map(d=>({id:d.id, ...d.data()})).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+  if(CURRENT.role !== "superadmin"){const allowed = CURRENT.companies || []; all = all.filter(c => allowed.includes(c.id));}
+  companies = all;
+  if(companies.length === 0){document.getElementById("appView").innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center"><div style="text-align:center;color:var(--muted)"><div style="font-size:48px;margin-bottom:14px">🏢</div><div style="font-size:16px;font-weight:600;color:var(--ink)">No company assigned</div></div></div>'; return;}
+  if(!selectedCompanyId || !companies.find(c=>c.id===selectedCompanyId)){selectedCompanyId = companies[0].id;}
+  openCompanySelector();
+}
+
+function openCompanySelector(){
+  const list = document.getElementById("companySelectorList");
+  list.innerHTML = companies.map(c=>`<div style="padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer" onmouseover="this.style.background='var(--panel-2)'" onmouseout="this.style.background=''" onclick="selectCompany('${c.id}')"><div style="font-weight:600;font-size:14px">${esc(c.name)}</div></div>`).join("");
+  show_modal("companySelectorModal");
+}
+
+async function selectCompany(companyId){
+  selectedCompanyId = companyId;
+  selectedFolderId = null;
+  closeModal("companySelectorModal");
+  const company = companies.find(c=>c.id===companyId);
+  document.getElementById("selectedCompanyName").textContent = company.name;
+  await loadFolderStructure();
+}
+
+async function loadFolderStructure(){
+  const compRef = db.collection(COL_COMPANIES).doc(selectedCompanyId);
+  const qs = await compRef.collection("folders").get();
+  let all = qs.docs.map(d=>({id:d.id, ...d.data()}));
+  folderTree = all.filter(f=>!f.parent).map(f=>({...f, children: all.filter(c=>c.parent===f.id)}));
+  renderFolderTree();
+  await loadDocuments();
+}
+
+function renderFolderTree(){
+  const tree = document.getElementById("folderTree");
+  tree.innerHTML = '<button class="tree-node" onclick="selectFolder(null)">📁 Root</button>' + folderTree.map(f=>renderNode(f, 0)).join("");
+}
+
+function renderNode(f, level){
+  const hasChildren = f.children && f.children.length > 0;
+  return `<div style="margin-left:${level*12}px"><button class="tree-node ${selectedFolderId===f.id?'active':''}" onclick="selectFolder('${f.id}')">${hasChildren?'📂':'📄'} ${esc(f.name)}</button>${hasChildren ? f.children.map(c=>renderNode(c, level+1)).join("") : ""}</div>`;
+}
+
+function selectFolder(folderId){selectedFolderId = folderId; renderFolderTree(); renderContent();}
+
+async function openNewFolder(){
+  const name = prompt("Folder name:"); if(!name) return;
+  const compRef = db.collection(COL_COMPANIES).doc(selectedCompanyId);
+  await compRef.collection("folders").add({name, parent: selectedFolderId || null, createdAt: Date.now(), createdBy: CURRENT.uid});
+  toast("Folder created.","ok");
+  await loadFolderStructure();
+}
+
+async function loadDocuments(){
+  const compRef = db.collection(COL_COMPANIES).doc(selectedCompanyId);
+  let qs = await compRef.collection("documents").get();
+  documents = qs.docs.map(d=>({id:d.id, ...d.data()}));
+  documents.sort((a,b)=>(b.uploadedAt||0) - (a.uploadedAt||0));
+  renderContent();
+}
+
+async function renderContent(){
+  const area = document.getElementById("contentArea");
+  const term = (document.getElementById("searchInput").value||"").toLowerCase().trim();
+  let list = documents.slice();
+  if(selectedFolderId !== null && selectedFolderId !== undefined){list = list.filter(d=>d.folderId===selectedFolderId);}else if(selectedFolderId===null){list = list.filter(d=>!d.folderId);}
+  if(term) list = list.filter(d=>(d.name||"").toLowerCase().includes(term) || (d.description||"").toLowerCase().includes(term));
+  document.getElementById("contentTitle").textContent = selectedFolderId ? `${getFolderPath(selectedFolderId).join(" > ")}` : "Root Documents";
+  if(list.length === 0){area.innerHTML = `<div class="empty"><div class="big">📂</div><div>This folder is empty</div></div>`; return;}
+  const canDelete = CURRENT.role!=="viewer";
+  area.innerHTML = '<div class="doc-grid">' + list.map(d=>{const ext = (d.name||"").split(".").pop().slice(0,4) || "DOC"; return `<div class="doc-card"><div class="doc-top"><div class="file-ic" style="background:${colorFor(ext)}">${esc(ext)}</div><div><div class="doc-name">${esc(d.name)}</div></div></div>${d.description?`<div class="doc-desc">${esc(d.description)}</div>`:"" }<div class="doc-meta">By ${esc(d.uploadedByName||"—")} · ${fmtDate(d.uploadedAt)}<br>${fmtSize(d.size)}</div><div class="doc-actions"><button class="btn btn-sm" onclick="downloadDoc('${d.id}')">⬇ Download</button>${canDelete?`<button class="btn btn-ghost btn-sm" onclick="deleteDoc('${d.id}')">🗑</button>`:""}</div></div>`;}).join("") + '</div>';
+}
+
+function getFolderPath(folderId){const path = []; let current = folderTree.find(f=>f.id===folderId); while(current){path.unshift(current.name); current = folderTree.find(f=>f.id===current.parent);} return path;}
+
+function openUpload(){if(!selectedCompanyId){toast("Select company first.","err"); return;} pickedFile = null; document.getElementById("fileZone").classList.remove("has"); document.getElementById("fileZoneText").textContent = "Click to choose"; document.getElementById("upDesc").value = ""; const path = selectedFolderId ? getFolderPath(selectedFolderId).join(" > ") : "Root"; document.getElementById("folderPath").textContent = path; show_modal("uploadModal");}
+
+function onFilePick(){const f = document.getElementById("fileInput").files[0]; if(!f) return; if(f.size > 26 * 1024 * 1024){toast("File too large.","err"); document.getElementById("fileInput").value = ""; return;} pickedFile = f; document.getElementById("fileZone").classList.add("has"); document.getElementById("fileZoneText").textContent = `${f.name} · ${fmtSize(f.size)}`;}
+
+const fz = document.getElementById("fileZone");
+fz.addEventListener("dragover",e=>{e.preventDefault();fz.classList.add("drag");});
+fz.addEventListener("dragleave",()=>fz.classList.remove("drag"));
+fz.addEventListener("drop",e=>{e.preventDefault();fz.classList.remove("drag");const f = e.dataTransfer.files[0]; if(f){document.getElementById("fileInput").files = e.dataTransfer.files; onFilePick();}});
+
+function fileToBase64(file){return new Promise((res,rej)=>{const r = new FileReader(); r.onload = ()=>res(r.result.split(",")[1]); r.onerror = ()=>rej(new Error("Read error")); r.readAsDataURL(file);});}
+
+async function callScript(payload){const res = await fetch(APPS_SCRIPT_URL,{method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify(payload)}); return await res.json();}
+
+async function submitUpload(){
+  if(!pickedFile){toast("Choose file.","err"); return;}
+  const company = companies.find(c=>c.id===selectedCompanyId);
+  const btn = document.getElementById("upSubmit");
+  btn.disabled = true; const old = btn.innerHTML; btn.innerHTML = '<span class="loader"></span>';
+  try{
+    const b64 = await fileToBase64(pickedFile);
+    const r = await callScript({action:"upload", companyName: company.name, fileName: pickedFile.name, mimeType: pickedFile.type || "application/octet-stream", fileData: b64});
+    if(!r.success) throw new Error(r.error||"Upload failed");
+    const compRef = db.collection(COL_COMPANIES).doc(selectedCompanyId);
+    await compRef.collection("documents").add({name: pickedFile.name, folderId: selectedFolderId || null, description: document.getElementById("upDesc").value.trim(), fileId: r.fileId, mimeType: pickedFile.type || "application/octet-stream", size: r.size || pickedFile.size, uploadedBy: CURRENT.uid, uploadedByName: CURRENT.name || CURRENT.email, uploadedAt: Date.now()});
+    closeModal("uploadModal");
+    toast("Uploaded.","ok");
+    await loadDocuments();
+  }catch(e){toast(e.message || "Failed","err");}
+  finally{btn.disabled = false; btn.innerHTML = old;}
+}
+
+function downloadDoc(docId){const d = documents.find(x=>x.id===docId); if(!d) return; window.open("https://drive.google.com/uc?export=download&id=" + d.fileId, "_blank");}
+
+async function deleteDoc(docId){
+  const d = documents.find(x=>x.id===docId); if(!d) return; if(!confirm(`Delete "${d.name}"?`)) return;
+  try{
+    await callScript({action:"delete", fileId:d.fileId});
+    const compRef = db.collection(COL_COMPANIES).doc(selectedCompanyId);
+    await compRef.collection("documents").doc(docId).delete();
+    toast("Deleted.","ok");
+    await loadDocuments();
+  }catch(e){toast(e.message || "Failed","err");}
+}
+
+function show(id){["loginView","authPage","appView"].forEach(v=>document.getElementById(v).classList.add("hidden")); document.getElementById(id).classList.remove("hidden");}
+function show_modal(id){document.getElementById(id).classList.remove("hidden");}
+function closeModal(id){document.getElementById(id).classList.add("hidden");}
+let toastTimer; function toast(msg, kind){const t = document.getElementById("toast"); t.textContent = msg; t.className = "show" + (kind?(" "+kind):""); clearTimeout(toastTimer); toastTimer = setTimeout(()=>{t.className = t.className.replace("show","").trim();}, 3200);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+function fmtSize(b){if(!b) return ""; const u=["B","KB","MB","GB"]; let i=0,n=b; while(n>=1024&&i<3){n/=1024;i++;} return n.toFixed(i?1:0)+" "+u[i];}
+function fmtDate(ts){if(!ts) return "—"; const d=new Date(ts); return d.toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});}
+function colorFor(ext){const map={pdf:"#dc2b46",doc:"#2f5bea",docx:"#2f5bea",xls:"#0f9d6e",xlsx:"#0f9d6e",csv:"#0f9d6e",png:"#7c3aed",jpg:"#7c3aed",jpeg:"#7c3aed",ppt:"#d97706",pptx:"#d97706",zip:"#64748b",txt:"#475569"}; return map[(ext||"").toLowerCase()] || "#475569";}
+
+document.querySelectorAll(".modal-bg").forEach(bg=>{bg.addEventListener("click", e=>{if(e.target===bg) bg.classList.add("hidden");});});
+</script>
+</body>
+</html>
