@@ -1,218 +1,207 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Document Vault - Phase 1b</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Document Vault – Kasera Industries</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#1d1340; --panel:#ffffff; --panel-2:#f6f4fc; --ink:#1a1430;
-    --muted:#6b6b82; --line:#ece8f6; --brand:#7c3aed; --brand-d:#6d28d9;
-    --accent:#f97316; --accent-d:#ea6a0a; --radius:16px;
-    --ok:#0f9d6e; --warn:#d97706; --danger:#dc2b46;
-    --shadow:0 1px 2px rgba(26,20,48,.06),0 10px 30px rgba(26,20,48,.10);
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%}
-  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--panel-2);color:var(--ink);-webkit-font-smoothing:antialiased}
-  button{font-family:inherit;cursor:pointer}
-  input,select,textarea{font-family:inherit;font-size:14px}
-  .hidden{display:none !important}
-  h1,h2,h3,.brand-name,.btn{font-family:'Poppins','Inter',sans-serif}
-  .brand{display:flex;align-items:center;gap:11px}
-  .brand-mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;font-size:16px}
-  .brand-name{font-weight:700;font-size:16px}
-  .spacer{flex:1}
-  .btn{border:none;border-radius:999px;padding:11px 18px;font-weight:600;font-size:14px;background:#f97316;color:#fff;transition:all .15s;box-shadow:0 4px 12px rgba(249,115,22,.25);cursor:pointer}
-  .btn:hover{background:#ea6a0a}
-  .btn:disabled{opacity:.6;cursor:not-allowed}
-  .btn-block{width:100%}
-  .btn-violet{background:#7c3aed;box-shadow:0 4px 12px rgba(124,58,237,.28)}
-  .btn-violet:hover{background:#6d28d9}
-  .btn-ghost{background:var(--panel-2);color:var(--ink);border:1px solid var(--line);box-shadow:none}
-  .btn-ghost:hover{background:#eaeef6}
-  .btn-sm{padding:8px 14px;font-size:13px;border-radius:999px;box-shadow:none}
-  .btn-danger{background:#dc2b46}
-  .btn-lg{padding:14px 26px;font-size:15.5px}
+:root{--bg:#1d1340;--panel:#fff;--panel-2:#f6f4fc;--ink:#1a1430;--muted:#6b6b82;--line:#ece8f6;--brand:#7c3aed;--brand-d:#6d28d9;--accent:#f97316;--radius:16px;--ok:#0f9d6e;--warn:#d97706;--danger:#dc2b46;--shadow:0 1px 2px rgba(26,20,48,.06),0 10px 30px rgba(26,20,48,.10)}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--panel-2);color:var(--ink);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}input,select,textarea{font-family:inherit;font-size:14px}
+.hidden{display:none!important}
+h1,h2,h3,.brand-name,.btn{font-family:'Poppins','Inter',sans-serif}
+.brand{display:flex;align-items:center;gap:11px}
+.brand-mark{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;font-size:16px}
+.brand-name{font-weight:700;font-size:16px}
+.spacer{flex:1}
+.btn{border:none;border-radius:999px;padding:11px 18px;font-weight:600;font-size:14px;background:#f97316;color:#fff;transition:all .15s;box-shadow:0 4px 12px rgba(249,115,22,.25);cursor:pointer}
+.btn:hover{background:#ea6a0a}.btn:disabled{opacity:.6;cursor:not-allowed}
+.btn-block{width:100%}.btn-violet{background:#7c3aed;box-shadow:0 4px 12px rgba(124,58,237,.28)}.btn-violet:hover{background:#6d28d9}
+.btn-ghost{background:var(--panel-2);color:var(--ink);border:1px solid var(--line);box-shadow:none}.btn-ghost:hover{background:#eaeef6}
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:999px;box-shadow:none}
+.btn-danger{background:#dc2b46;box-shadow:none}.btn-danger:hover{background:#b91f38}
+.btn-lg{padding:14px 26px;font-size:15.5px}
 
-  .lp{min-height:100vh;background:var(--panel-2);display:flex;flex-direction:column}
-  .lp-bar{background:linear-gradient(90deg,#7c3aed,#9d5cf5);color:#fff;text-align:center;font-size:13.5px;font-weight:500;padding:11px 16px}
-  .lp-nav{max-width:1040px;width:calc(100% - 32px);margin:18px auto 0;background:#fff;border-radius:16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;padding:12px 20px}
-  .lp-hero{flex:1;max-width:820px;margin:0 auto;padding:64px 24px 36px;text-align:center}
-  .lp-hero h1{font-size:clamp(33px,6vw,56px);line-height:1.06;margin:0 0 18px;color:var(--ink)}
-  .lp-hero h1 .grad{background:linear-gradient(90deg,#f97316,#fdba74);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .lp-hero p.lead{font-size:clamp(16px,2.3vw,20px);color:var(--muted);line-height:1.55;max-width:600px;margin:0 auto 28px}
-  .lp-pills{display:flex;gap:11px;justify-content:center;flex-wrap:wrap;margin-bottom:32px}
-  .lp-pill{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:9px 16px;font-size:14px;font-weight:500}
-  .lp-pill .ck{width:20px;height:20px;border-radius:50%;background:#7c3aed;color:#fff;display:grid;place-items:center;font-size:11px}
+/* AUTH */
+#authPage{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(1200px 600px at 80% -10%,rgba(124,58,237,.30),transparent),radial-gradient(900px 500px at -10% 110%,rgba(249,115,22,.18),transparent),#1d1340}
+.auth-back{position:absolute;top:22px;left:22px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:9px 16px;font-weight:600;font-size:13px;cursor:pointer}
+.auth-back:hover{background:rgba(255,255,255,.2)}
+.auth-card{width:100%;max-width:400px;background:#fff;border-radius:18px;padding:32px 30px;box-shadow:0 24px 60px rgba(0,0,0,.32)}
+.auth-card h1{font-size:22px;margin:8px 0 4px;text-align:center}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px;border:1px solid var(--line);border-radius:999px;background:#fff;font-weight:600;font-size:14.5px;color:var(--ink);cursor:pointer}
+.gbtn:hover{background:var(--panel-2)}
+.divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12.5px;margin:18px 0}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.field input,.field textarea{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#fbfcfe}
+.field input:focus,.field textarea:focus{outline:none;border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.15)}
+.field textarea{resize:vertical;min-height:70px}
+.pwd-toggle{position:relative}.pwd-toggle input{padding-right:38px}
+.pwd-toggle .toggle-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer}
+.auth-msg{font-size:13px;margin-top:12px;min-height:18px}
+.auth-msg.err{color:#dc2b46}.auth-msg.ok{color:#0f9d6e}
 
-  #authPage{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(1200px 600px at 80% -10%,rgba(124,58,237,.30),transparent),radial-gradient(900px 500px at -10% 110%,rgba(249,115,22,.18),transparent),#1d1340}
-  .auth-back{position:absolute;top:22px;left:22px;background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:9px 16px;font-weight:600;font-size:13px;cursor:pointer;top:22px;left:22px}
-  .auth-card{width:100%;max-width:400px;background:#fff;border-radius:18px;padding:32px 30px;box-shadow:0 24px 60px rgba(0,0,0,.32)}
-  .auth-card h1{font-size:22px;margin:8px 0 4px;text-align:center}
-  .gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px;border:1px solid var(--line);border-radius:999px;background:#fff;font-weight:600;font-size:14.5px;color:var(--ink);cursor:pointer}
-  .gbtn:hover{background:var(--panel-2)}
+/* APP */
+#appView{min-height:100vh;display:flex;flex-direction:column}
+header.topbar{background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:12px 20px;position:sticky;top:0;z-index:20}
+.company-chip{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--panel-2);border-radius:999px;font-weight:600;font-size:13px;cursor:pointer;border:1px solid var(--line)}
+.company-chip:hover{background:#eaeef6}
+.userchip{display:flex;align-items:center;gap:9px}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+.nm{font-size:13.5px;font-weight:600}.rl{font-size:11px;color:var(--muted);text-transform:capitalize}
 
-  .field{margin-bottom:14px}
-  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
-  .field input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#fbfcfe}
-  .field input:focus{outline:none;border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.15)}
-  .pwd-toggle{position:relative}
-  .pwd-toggle input{padding-right:38px}
-  .pwd-toggle .toggle-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer}
-  .auth-msg{font-size:13px;margin-top:12px;min-height:18px}
-  .auth-msg.err{color:#dc2b46}
-  .auth-msg.ok{color:#0f9d6e}
+.layout{flex:1;display:flex;max-width:1240px;width:100%;margin:0 auto;padding:20px;gap:20px}
+aside.side{width:240px;flex-shrink:0;overflow-y:auto}
+.side-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:16px}
+.side-card h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 10px}
+.tab-btns{display:flex;flex-direction:column;gap:4px}
+.tab-btn{border:none;background:none;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;text-align:left;transition:background .15s}
+.tab-btn:hover{background:var(--panel-2)}.tab-btn.active{background:rgba(124,58,237,.1);color:#7c3aed;font-weight:600}
+.tree-node{border:none;background:none;padding:8px 10px;border-radius:8px;font-size:13px;color:var(--ink);display:flex;justify-content:space-between;align-items:center;text-align:left;cursor:pointer;transition:background .15s;width:100%}
+.tree-node:hover{background:var(--panel-2)}.tree-node.active{background:rgba(124,58,237,.1);color:#7c3aed;font-weight:600}
 
-  #appView{min-height:100vh;display:flex;flex-direction:column}
-  header.topbar{background:var(--panel);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:12px 20px;position:sticky;top:0;z-index:20}
-  .company-chip{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--panel-2);border-radius:999px;font-weight:600;font-size:13px;cursor:pointer;border:1px solid var(--line)}
-  .userchip{display:flex;align-items:center;gap:9px}
-  .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;display:grid;place-items:center;font-weight:700}
+main.content{flex:1;min-width:0}
+.content-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.content-head h2{margin:0;font-size:21px;letter-spacing:-.4px}
+.search{flex:1;min-width:180px;max-width:340px;position:relative}
+.search input{width:100%;padding:10px 12px 10px 36px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.search input:focus{outline:none;border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.12)}
+.search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted)}
 
-  .layout{flex:1;display:flex;max-width:1240px;width:100%;margin:0 auto;padding:20px;gap:20px}
-  aside.side{width:240px;flex-shrink:0;overflow-y:auto;max-height:calc(100vh - 100px)}
-  .side-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:16px}
-  .side-card h3{font-size:11.5px;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
-  .tree-node{border:none;background:none;padding:8px 10px;border-radius:8px;font-size:13.5px;color:var(--ink);cursor:pointer;transition:background .15s}
-  .tree-node:hover{background:var(--panel-2)}
-  .tree-node.active{background:rgba(124,58,237,.1);color:#7c3aed;font-weight:600}
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.doc-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:15px;display:flex;flex-direction:column;gap:10px;transition:box-shadow .15s,transform .15s}
+.doc-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
+.file-ic{width:42px;height:42px;border-radius:10px;flex-shrink:0;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;text-transform:uppercase}
+.doc-name{font-weight:600;font-size:14px;line-height:1.3;word-break:break-word}
+.doc-desc{font-size:12.5px;color:var(--muted);line-height:1.4}
+.doc-meta{font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:9px;line-height:1.5}
+.doc-actions{display:flex;gap:8px}
+.doc-actions .btn{flex:1}
 
-  main.content{flex:1;min-width:0}
-  .content-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-  .content-head h2{margin:0;font-size:21px}
-  .doc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
-  .doc-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:15px}
-  .doc-card:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
-  .doc-name{font-weight:600;font-size:14px}
-  .doc-meta{font-size:11.5px;color:var(--muted);margin-top:8px}
+.activity-item{padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+.activity-time{color:var(--muted);font-size:11px;margin-bottom:4px}
+.activity-action{font-weight:600;font-size:13px;color:var(--ink)}
+.activity-user{color:var(--muted);font-size:12px;margin-top:2px}
 
-  .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.trash-item{padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.trash-name{font-weight:600;font-size:13px;color:var(--ink)}
+.trash-time{color:var(--muted);font-size:11px;margin-top:4px}
 
-  .modal-bg{position:fixed;inset:0;background:rgba(15,23,41,.5);display:flex;align-items:center;justify-content:center;padding:20px;z-index:60}
-  .modal{background:var(--panel);border-radius:16px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(16,24,43,.3);max-height:90vh;overflow:auto}
-  .modal-head{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line)}
-  .modal-head h3{margin:0;font-size:17px}
-  .modal-body{padding:22px}
-  .modal-foot{padding:16px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
-  .x-btn{border:none;background:none;font-size:22px;color:var(--muted);cursor:pointer}
+/* Session warning */
+.session-warning{position:fixed;top:20px;right:20px;background:#d97706;color:#fff;padding:14px 18px;border-radius:10px;z-index:100;max-width:280px;box-shadow:var(--shadow)}
+.session-countdown{font-size:26px;font-weight:700;margin:6px 0}
 
-  .session-warning{position:fixed;top:20px;right:20px;background:#d97706;color:#fff;padding:14px 18px;border-radius:10px;z-index:100;max-width:300px;box-shadow:var(--shadow)}
-  .session-countdown{font-size:24px;font-weight:700;margin:8px 0}
+/* Rate limit badge */
+.rate-badge{padding:8px 12px;border-radius:8px;font-size:12.5px;font-weight:600;margin-bottom:12px}
+.rate-ok{background:rgba(15,157,110,.1);color:#0f9d6e}
+.rate-warn{background:rgba(217,119,6,.1);color:#d97706}
+.rate-danger{background:rgba(220,43,70,.1);color:#dc2b46}
 
-  #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-size:13.5px;opacity:0;transition:.25s;z-index:80}
-  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-  #toast.err{background:#dc2b46}
-  #toast.ok{background:#0f9d6e}
+.empty{text-align:center;padding:60px 20px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);border-radius:var(--radius)}
+.empty .big{font-size:34px;margin-bottom:8px}
 
-  #fullLoad{position:fixed;inset:0;background:#1d1340;display:grid;place-items:center;z-index:100;color:#fff}
-  .loader{width:18px;height:18px;border:2px solid rgba(124,58,237,.25);border-top-color:#7c3aed;border-radius:50%;animation:spin .7s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  @media(max-width:820px){.layout{flex-direction:column;padding:14px}}
+.modal-bg{position:fixed;inset:0;background:rgba(15,23,41,.5);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:60}
+.modal{background:var(--panel);border-radius:16px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(16,24,43,.3);max-height:90vh;overflow:auto}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line)}
+.modal-head h3{margin:0;font-size:17px}
+.modal-body{padding:22px}
+.modal-foot{padding:16px 22px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px}
+.x-btn{border:none;background:none;font-size:22px;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:6px}
+.x-btn:hover{background:var(--panel-2)}
+.filezone{border:2px dashed var(--line);border-radius:12px;padding:24px;text-align:center;color:var(--muted);cursor:pointer;transition:border .15s,background .15s}
+.filezone:hover,.filezone.drag{border-color:#7c3aed;background:rgba(124,58,237,.04)}
+.filezone.has{border-style:solid;border-color:#0f9d6e;color:var(--ink);background:rgba(15,157,110,.05)}
+
+/* OTP */
+.otp-inputs{display:flex;gap:10px;justify-content:center;margin:16px 0}
+.otp-inputs input{width:46px;height:54px;text-align:center;font-size:22px;font-weight:700;border:2px solid var(--line);border-radius:10px;background:#fbfcfe}
+.otp-inputs input:focus{outline:none;border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.15)}
+
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:10px;font-size:13.5px;opacity:0;transition:.25s;z-index:80;pointer-events:none;max-width:90vw}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.err{background:#dc2b46}#toast.ok{background:#0f9d6e}#toast.warn{background:#d97706}
+
+#fullLoad{position:fixed;inset:0;background:#1d1340;display:grid;place-items:center;z-index:100;color:#fff}
+.loader{width:18px;height:18px;border:2px solid rgba(124,58,237,.25);border-top-color:#7c3aed;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:820px){.layout{flex-direction:column;padding:14px}aside.side{width:100%}.userchip .meta{display:none}}
 </style>
 </head>
 <body>
 
 <div id="fullLoad"><div style="text-align:center"><div class="loader" style="width:30px;height:30px"></div><div style="margin-top:14px;font-size:14px;opacity:.8">Loading vault…</div></div></div>
 
-<div id="loginView" class="hidden">
-  <div class="lp">
-    <div class="lp-bar">🔒 Secure Vault - Phase 1b: 2FA + Rate Limiting + Session Timeout</div>
-    <div class="lp-nav">
-      <div class="brand"><div class="brand-mark">🗄️</div><div class="brand-name">Document Vault</div></div>
-      <div class="spacer"></div>
-      <button class="btn btn-violet btn-sm" onclick="openLogin('login')">Sign in</button>
-    </div>
-    <div class="lp-hero">
-      <h1>Secure Document Vault<br><span class="grad">with 2FA Protection</span></h1>
-      <p class="lead">Multi-factor authentication, rate limiting, and automatic session timeout for maximum security.</p>
-      <div class="lp-pills">
-        <span class="lp-pill"><span class="ck">✓</span> 2FA OTP</span>
-        <span class="lp-pill"><span class="ck">✓</span> Rate Limiting</span>
-        <span class="lp-pill"><span class="ck">✓</span> Auto Logout</span>
-      </div>
-    </div>
-  </div>
-</div>
-
+<!-- AUTH PAGE -->
 <div id="authPage" class="hidden">
-  <button class="auth-back" onclick="show('loginView')">← Back</button>
+  <button class="auth-back" onclick="show('authPage')">← Back</button>
   <div class="auth-card">
     <div class="brand" style="justify-content:center;margin-bottom:6px">
-      <div class="brand-mark">🗄️</div>
-      <div class="brand-name">Document Vault</div>
+      <div class="brand-mark">🗄️</div><div class="brand-name">Document Vault</div>
     </div>
-    <h1 id="authTitle">Welcome back</h1>
-    
+
     <!-- Password Screen -->
     <div id="passwordScreen">
-      <p style="text-align:center;color:var(--muted);font-size:13.5px;margin:0 0 20px">Sign in to access your documents.</p>
-      <button class="gbtn" onclick="alert('Google Sign-In: configure in Firebase Console')">
-        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8a12 12 0 1 1 7.9-21l5.7-5.7A20 20 0 1 0 24 44c11 0 20-8 20-20 0-1.3-.1-2.5-.4-3.5z"/></svg>
+      <h1 style="text-align:center;font-size:22px;margin:8px 0 4px">Welcome back</h1>
+      <p style="text-align:center;color:var(--muted);font-size:13px;margin:0 0 20px">Sign in to access your documents.</p>
+      <button class="gbtn" onclick="googleSignIn()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8a12 12 0 1 1 7.9-21l5.7-5.7A20 20 0 1 0 24 44c11 0 20-8 20-20 0-1.3-.1-2.5-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8A12 12 0 0 1 24 12c3 0 5.8 1.2 7.9 3l5.7-5.7A20 20 0 0 0 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2A12 12 0 0 1 12.7 28l-6.5 5A20 20 0 0 0 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3a12 12 0 0 1-4.1 5.6l6.2 5.2C39 38 44 32 44 24c0-1.3-.1-2.5-.4-3.5z"/></svg>
         Continue with Google
       </button>
-      <div style="display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12.5px;margin:18px 0">
-        <span style="flex:1;height:1px;background:var(--line)"></span>or use email<span style="flex:1;height:1px;background:var(--line)"></span>
-      </div>
+      <div class="divider">or use email</div>
       <div class="field">
         <label>Email</label>
-        <input id="authEmail" type="email" placeholder="you@company.com" />
+        <input id="authEmail" type="email" placeholder="you@company.com"/>
       </div>
       <div class="field pwd-toggle">
         <label>Password</label>
-        <input id="authPass" type="password" placeholder="••••••••" />
-        <button type="button" class="toggle-btn" onclick="togglePassword()">👁️</button>
+        <input id="authPass" type="password" placeholder="••••••••"/>
+        <button type="button" class="toggle-btn" onclick="togglePwd()">👁️</button>
       </div>
       <button class="btn btn-violet btn-block" id="authBtn" onclick="doAuth()">Sign in</button>
       <div class="auth-msg" id="authMsg"></div>
-      <p style="text-align:center;margin-top:14px">
-        <a onclick="alert('Password reset: will be sent to your email')" style="color:#7c3aed;font-size:12px;cursor:pointer;text-decoration:none">Forgot password?</a>
-      </p>
+      <p style="text-align:center;margin-top:12px"><a onclick="doForgot()" style="color:#7c3aed;font-size:13px;cursor:pointer">Forgot password?</a></p>
     </div>
 
-    <!-- 2FA OTP Screen -->
+    <!-- OTP Screen -->
     <div id="otpScreen" class="hidden">
-      <p style="text-align:center;color:var(--muted);font-size:13.5px;margin:0 0 20px">Enter the 6-digit code sent to your email.</p>
-      <div class="field">
-        <label>Verification Code</label>
-        <input id="otpCode" type="text" placeholder="000000" maxlength="6" style="font-size:24px;text-align:center;letter-spacing:8px" />
+      <h1 style="text-align:center;font-size:22px;margin:8px 0 4px">Verify Identity</h1>
+      <p style="text-align:center;color:var(--muted);font-size:13px;margin:0 0 20px">Enter the 6-digit code sent to your email.</p>
+      <div class="otp-inputs">
+        <input type="text" maxlength="1" class="otp-digit" oninput="otpNext(this,0)"/>
+        <input type="text" maxlength="1" class="otp-digit" oninput="otpNext(this,1)"/>
+        <input type="text" maxlength="1" class="otp-digit" oninput="otpNext(this,2)"/>
+        <input type="text" maxlength="1" class="otp-digit" oninput="otpNext(this,3)"/>
+        <input type="text" maxlength="1" class="otp-digit" oninput="otpNext(this,4)"/>
+        <input type="text" maxlength="1" class="otp-digit" oninput="otpNext(this,5)"/>
       </div>
-      <button class="btn btn-violet btn-block" onclick="verifyOTP()">Verify</button>
+      <button class="btn btn-violet btn-block" onclick="verifyOTP()">Verify Code</button>
       <div class="auth-msg" id="otpMsg"></div>
-      <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:14px">
-        Didn't receive code? <a onclick="resendOTP()" style="color:#7c3aed;cursor:pointer">Resend</a>
-      </p>
+      <p style="text-align:center;margin-top:12px;font-size:13px;color:var(--muted)">Didn't get code? <a onclick="resendOTP()" style="color:#7c3aed;cursor:pointer">Resend</a></p>
     </div>
   </div>
 </div>
 
-<div class="modal-bg hidden" id="companySelectorModal">
-  <div class="modal" style="max-width:500px">
-    <div class="modal-head"><h3>Select a company</h3></div>
-    <div class="modal-body">
-      <div id="companySelectorList"></div>
-    </div>
-  </div>
+<!-- SESSION WARNING -->
+<div id="sessionWarning" class="session-warning hidden">
+  ⏰ <strong>Session expiring!</strong>
+  <div class="session-countdown" id="sessionCountdown">5:00</div>
+  <button class="btn btn-sm" style="width:100%;margin-top:8px;background:#fff;color:#d97706" onclick="extendSession()">Stay Logged In</button>
 </div>
 
+<!-- APP VIEW -->
 <div id="appView" class="hidden">
-  <div id="sessionWarning" class="session-warning hidden">
-    ⏰ <strong>Session expiring!</strong>
-    <div class="session-countdown" id="sessionCountdown">5:00</div>
-    <button class="btn btn-sm" style="width:100%" onclick="extendSession()">Stay Logged In</button>
-  </div>
-
   <header class="topbar">
-    <div class="brand"><div class="brand-mark" style="width:32px;height:32px;font-size:16px">🗄️</div><div class="brand-name">Document Vault</div></div>
-    <div class="company-chip" onclick="openCompanySelector()">
-      📁 <span id="selectedCompanyName">—</span> ▼
-    </div>
+    <div class="brand"><div class="brand-mark" style="width:32px;height:32px;font-size:15px">🗄️</div><div class="brand-name">Document Vault</div></div>
+    <div class="company-chip" onclick="openCompanySelector()">📁 <span id="selectedCompanyName">—</span> ▾</div>
     <div class="spacer"></div>
     <div class="userchip">
+      <div class="meta" style="text-align:right"><div class="nm" id="uName">—</div><div class="rl" id="uRole">—</div></div>
       <div class="avatar" id="uAvatar">?</div>
       <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
     </div>
@@ -221,34 +210,82 @@
   <div class="layout">
     <aside class="side">
       <div class="side-card">
+        <h3>Navigation</h3>
+        <div class="tab-btns">
+          <button class="tab-btn active" id="tab-files" onclick="switchTab('files',this)">📁 Files</button>
+          <button class="tab-btn" id="tab-activity" onclick="switchTab('activity',this)">📋 Activity Log</button>
+          <button class="tab-btn" id="tab-trash" onclick="switchTab('trash',this)">🗑️ Trash</button>
+        </div>
+      </div>
+      <div class="side-card" id="folderSection">
         <h3>Folders</h3>
         <div id="folderTree"></div>
+      </div>
+      <div class="side-card" id="adminCard" style="display:none">
+        <h3>Admin</h3>
+        <div class="tab-btns">
+          <button class="tab-btn" onclick="openNewFolder()">📂 New Folder</button>
+        </div>
       </div>
     </aside>
 
     <main class="content">
-      <div class="content-head">
-        <h2 id="contentTitle">Documents</h2>
-        <button class="btn" id="uploadBtn" onclick="openUpload()" style="display:none">+ Upload</button>
+      <!-- FILES TAB -->
+      <div id="filesTab">
+        <div class="content-head">
+          <h2 id="contentTitle">Documents</h2>
+          <div class="search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="searchInput" type="text" placeholder="Search documents…" oninput="renderDocs()"/>
+          </div>
+          <button class="btn" id="uploadBtn" onclick="openUpload()" style="display:none">+ Upload</button>
+          <button class="btn btn-ghost btn-sm" id="newFolderBtn" onclick="openNewFolder()" style="display:none">+ Folder</button>
+        </div>
+        <div id="contentArea"></div>
       </div>
-      <div id="contentArea"></div>
+
+      <!-- ACTIVITY TAB -->
+      <div id="activityTab" class="hidden">
+        <div class="content-head"><h2>Activity Log</h2></div>
+        <div id="activityList"></div>
+      </div>
+
+      <!-- TRASH TAB -->
+      <div id="trashTab" class="hidden">
+        <div class="content-head"><h2>🗑️ Trash (30-day recovery)</h2></div>
+        <div id="trashList"></div>
+      </div>
     </main>
   </div>
 </div>
 
+<!-- COMPANY SELECTOR MODAL -->
+<div class="modal-bg hidden" id="companySelectorModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-head"><h3>Select Company</h3></div>
+    <div class="modal-body"><div id="companySelectorList"></div></div>
+  </div>
+</div>
+
+<!-- UPLOAD MODAL -->
 <div class="modal-bg hidden" id="uploadModal">
   <div class="modal">
-    <div class="modal-head"><h3>Upload document</h3><button class="x-btn" onclick="closeModal('uploadModal')">×</button></div>
+    <div class="modal-head"><h3>Upload Document</h3><button class="x-btn" onclick="closeModal('uploadModal')">×</button></div>
     <div class="modal-body">
+      <div id="rateLimitBadge" class="rate-badge rate-ok">✓ 10/10 uploads remaining this hour</div>
+      <div class="field"><label>Folder</label><div id="folderPathDisplay" style="padding:9px 12px;background:var(--panel-2);border-radius:8px;font-size:13px;color:var(--muted)">Root</div></div>
       <div class="field">
-        <label>Rate Limit Status</label>
-        <div id="rateLimitStatus" style="padding:10px;background:var(--ok);color:#fff;border-radius:8px;font-weight:600">✓ <span id="uploadsRemaining">10</span>/10 uploads remaining this hour</div>
+        <label>File <span style="color:var(--muted);font-weight:400">(max 25 MB)</span></label>
+        <div class="filezone" id="fileZone" onclick="document.getElementById('fileInput').click()">
+          <div id="fileZoneText">📎 Click or drag file here</div>
+        </div>
+        <input id="fileInput" type="file" style="display:none" onchange="onFilePick()"/>
       </div>
-      <div class="field">
-        <label>File</label>
-        <input id="fileInput" type="file" />
-      </div>
-      <button class="btn btn-violet btn-block" onclick="submitUpload()">Upload</button>
+      <div class="field"><label>Description <span style="color:var(--muted);font-weight:400">(optional)</span></label><textarea id="upDesc" placeholder="Short note about this file…"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('uploadModal')">Cancel</button>
+      <button class="btn" id="upBtn" onclick="submitUpload()">Upload</button>
     </div>
   </div>
 </div>
@@ -258,295 +295,288 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
 <script>
-const firebaseConfig = {
-  apiKey: "__FIREBASE_API_KEY__",
-  authDomain: "kasera-delegation.firebaseapp.com",
-  projectId: "kasera-delegation",
-  storageBucket: "kasera-delegation.firebasestorage.app",
-  messagingSenderId: "117646348596",
-  appId: "1:117646348596:web:07a7eaf7e1cdb32a0e5561"
-};
-
-const APPS_SCRIPT_URL = "__APPS_SCRIPT_URL__";
-const SUPER_ADMIN_EMAILS = ["ravi@kaseraindustries.in", "rsheartfulness@gmail.com"];
+/* ── CONFIG ── */
+const firebaseConfig={apiKey:"__FIREBASE_API_KEY__",authDomain:"kasera-delegation.firebaseapp.com",projectId:"kasera-delegation",storageBucket:"kasera-delegation.firebasestorage.app",messagingSenderId:"117646348596",appId:"1:117646348596:web:07a7eaf7e1cdb32a0e5561"};
+const APPS_SCRIPT_URL="__APPS_SCRIPT_URL__";
+const SUPER_ADMIN_EMAILS=["ravi@kaseraindustries.in","rsheartfulness@gmail.com"];
+const SESSION_TIMEOUT=30*60*1000, SESSION_WARNING=25*60*1000, RATE_LIMIT=10;
 
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+const auth=firebase.auth(), db=firebase.firestore();
+const googleProvider=new firebase.auth.GoogleAuthProvider();
 
-let CURRENT = null, otpVerified = false, sessionTimer = null, sessionWarningTimer = null;
-const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 min
-const SESSION_WARNING = 25 * 60 * 1000; // 25 min warning
-const RATE_LIMIT = 10; // 10 uploads per hour
+let CURRENT=null, selectedCompanyId=null, selectedFolderId=null, folderTree=[], documents=[], companies=[], pickedFile=null, sessionTimer=null, sessionWarningTimer=null;
 
-function togglePassword(){document.getElementById("authPass").type = document.getElementById("authPass").type === "password" ? "text" : "password"}
-
-function openLogin(mode){show("authPage")}
-
+/* ── AUTH ── */
+function togglePwd(){const i=document.getElementById("authPass");i.type=i.type==="password"?"text":"password"}
+async function googleSignIn(){try{await auth.signInWithPopup(googleProvider)}catch(e){setAuthMsg(prettyErr(e),"err")}}
 async function doAuth(){
-  const email = document.getElementById("authEmail").value.trim();
-  const pass = document.getElementById("authPass").value;
-  if(!email || !pass){setAuthMsg("Enter email and password.","err"); return}
-  
-  const btn = document.getElementById("authBtn");
-  btn.disabled = true;
-  const old = btn.innerHTML;
-  btn.innerHTML = '<span class="loader"></span>';
-  
-  try{
-    await auth.signInWithEmailAndPassword(email, pass);
-    // After password verified, check 2FA
-    await check2FA();
-  }catch(e){
-    setAuthMsg("Wrong email or password.","err");
-    btn.disabled = false;
-    btn.innerHTML = old;
-  }
+  const email=document.getElementById("authEmail").value.trim(), pass=document.getElementById("authPass").value;
+  if(!email||!pass){setAuthMsg("Enter email and password.","err");return}
+  const btn=document.getElementById("authBtn");btn.disabled=true;const old=btn.innerHTML;btn.innerHTML='<span class="loader"></span>';
+  try{await auth.signInWithEmailAndPassword(email,pass)}
+  catch(e){setAuthMsg(prettyErr(e),"err");btn.disabled=false;btn.innerHTML=old}
 }
-
-async function check2FA(){
-  const user = auth.currentUser;
-  const userDoc = await db.collection("vault_users").doc(user.uid).get();
-  const twoFADoc = await db.collection("vault_2fa_settings").doc(user.uid).get();
-  
-  if(twoFADoc.exists && twoFADoc.data().enabled){
-    // Send OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    sessionStorage.setItem("otp", otp);
-    sessionStorage.setItem("otpTime", Date.now());
-    
-    // In real app: send via email
-    console.log("OTP for testing:", otp);
-    alert("Demo OTP: " + otp + "\n(In production, sent to email)");
-    
-    // Show OTP screen
-    document.getElementById("passwordScreen").classList.add("hidden");
-    document.getElementById("otpScreen").classList.remove("hidden");
-  }else{
-    // No 2FA, proceed to app
-    otpVerified = true;
-    await bootApp();
-  }
+async function doForgot(){
+  const email=document.getElementById("authEmail").value.trim();
+  if(!email){setAuthMsg("Enter your email first.","err");return}
+  try{await auth.sendPasswordResetEmail(email);setAuthMsg("Reset link sent! Check your email.","ok")}
+  catch(e){setAuthMsg(prettyErr(e),"err")}
 }
+function setAuthMsg(t,k){const el=document.getElementById("authMsg");el.textContent=t||"";el.className="auth-msg"+(k?" "+k:"")}
+function prettyErr(e){const c=(e&&e.code)||"";if(c.includes("invalid-credential")||c.includes("wrong-password"))return "Wrong email or password.";if(c.includes("email-already-in-use"))return "Email already registered.";if(c.includes("weak-password"))return "Password min 6 chars.";return(e&&e.message)||"Error occurred."}
 
+/* ── OTP (2FA) ── */
+function otpNext(el,idx){const digits=document.querySelectorAll(".otp-digit");if(el.value&&idx<5)digits[idx+1].focus()}
 async function verifyOTP(){
-  const entered = document.getElementById("otpCode").value;
-  const stored = sessionStorage.getItem("otp");
-  
-  if(entered === stored){
-    otpVerified = true;
-    sessionStorage.removeItem("otp");
-    await bootApp();
-  }else{
-    document.getElementById("otpMsg").textContent = "Invalid code. Try again.";
-    document.getElementById("otpMsg").className = "auth-msg err";
-  }
+  const digits=document.querySelectorAll(".otp-digit");
+  const entered=Array.from(digits).map(d=>d.value).join("");
+  const stored=sessionStorage.getItem("vault_otp");
+  const otpTime=parseInt(sessionStorage.getItem("vault_otp_time")||"0");
+  if(Date.now()-otpTime>10*60*1000){document.getElementById("otpMsg").textContent="Code expired. Resend.";document.getElementById("otpMsg").className="auth-msg err";return}
+  if(entered===stored){sessionStorage.removeItem("vault_otp");sessionStorage.removeItem("vault_otp_time");await bootApp()}
+  else{document.getElementById("otpMsg").textContent="Wrong code. Try again.";document.getElementById("otpMsg").className="auth-msg err"}
 }
-
 async function resendOTP(){
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  sessionStorage.setItem("otp", otp);
-  alert("Demo OTP: " + otp);
-  toast("Code resent.", "ok");
+  const otp=Math.floor(100000+Math.random()*900000).toString();
+  sessionStorage.setItem("vault_otp",otp);sessionStorage.setItem("vault_otp_time",Date.now().toString());
+  console.log("OTP:",otp);alert("Demo OTP: "+otp+"\n(In production: sent via email)");
+  toast("Code resent.","ok")
 }
 
-function setAuthMsg(t, kind){
-  const el = document.getElementById("authMsg");
-  el.textContent = t || "";
-  el.className = "auth-msg" + (kind ? " "+kind : "");
+/* ── SESSION TIMEOUT ── */
+function startSession(){
+  clearTimeout(sessionTimer);clearTimeout(sessionWarningTimer);
+  sessionWarningTimer=setTimeout(()=>{document.getElementById("sessionWarning").classList.remove("hidden");startCountdown()},SESSION_WARNING);
+  sessionTimer=setTimeout(()=>{toast("Session expired.","warn");logout()},SESSION_TIMEOUT)
 }
-
-function logout(){
-  clearTimeout(sessionTimer);
-  clearTimeout(sessionWarningTimer);
-  auth.signOut();
+function startCountdown(){
+  let secs=5*60;
+  const tick=()=>{const m=Math.floor(secs/60),s=secs%60;document.getElementById("sessionCountdown").textContent=`${m}:${s.toString().padStart(2,"0")}`;secs--;if(secs>=0)setTimeout(tick,1000)};
+  tick()
 }
+function extendSession(){startSession();document.getElementById("sessionWarning").classList.add("hidden");toast("Session extended.","ok")}
+["click","keypress","mousemove"].forEach(ev=>document.addEventListener(ev,()=>{if(CURRENT)startSession()},true));
 
-auth.onAuthStateChanged(async (user) => {
-  if(!user){
-    CURRENT = null;
-    show("loginView");
-    document.getElementById("fullLoad").classList.add("hidden");
-    document.getElementById("passwordScreen").classList.remove("hidden");
-    document.getElementById("otpScreen").classList.add("hidden");
-    return;
-  }
-  
-  // User is signed in
-  let snap = await db.collection("vault_users").doc(user.uid).get();
+/* ── AUTH STATE ── */
+auth.onAuthStateChanged(async(user)=>{
+  if(!user){CURRENT=null;document.getElementById("fullLoad").classList.add("hidden");show("authPage");return}
+  let snap=await db.collection("vault_users").doc(user.uid).get();
   if(!snap.exists){
-    const isSuper = SUPER_ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((user.email||"").toLowerCase());
-    await db.collection("vault_users").doc(user.uid).set({
-      email: user.email,
-      name: user.displayName || user.email.split("@")[0],
-      role: isSuper ? "superadmin" : "viewer",
-      companies: [],
-      createdAt: Date.now()
-    });
-    snap = await db.collection("vault_users").doc(user.uid).get();
+    const isSuper=SUPER_ADMIN_EMAILS.map(e=>e.toLowerCase()).includes((user.email||"").toLowerCase());
+    await db.collection("vault_users").doc(user.uid).set({email:user.email,name:user.displayName||user.email.split("@")[0],role:isSuper?"superadmin":"viewer",companies:[],createdAt:Date.now()});
+    snap=await db.collection("vault_users").doc(user.uid).get()
   }
-  CURRENT = {uid: user.uid, ...snap.data()};
-
-  // Check if 2FA required
-  const twoFADoc = await db.collection("vault_2fa_settings").doc(user.uid).get();
-  if(twoFADoc.exists && twoFADoc.data().enabled && !otpVerified){
-    // Show OTP screen
+  CURRENT={uid:user.uid,...snap.data()};
+  const twoFA=await db.collection("vault_2fa_settings").doc(user.uid).get();
+  if(twoFA.exists&&twoFA.data().enabled){
+    const otp=Math.floor(100000+Math.random()*900000).toString();
+    sessionStorage.setItem("vault_otp",otp);sessionStorage.setItem("vault_otp_time",Date.now().toString());
+    console.log("OTP:",otp);alert("Demo OTP: "+otp);
     document.getElementById("fullLoad").classList.add("hidden");
-    show("authPage");
-    document.getElementById("passwordScreen").classList.add("hidden");
-    document.getElementById("otpScreen").classList.remove("hidden");
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    sessionStorage.setItem("otp", otp);
-    console.log("OTP for testing:", otp);
-    alert("Demo OTP: " + otp);
-    return;
+    show("authPage");document.getElementById("passwordScreen").classList.add("hidden");document.getElementById("otpScreen").classList.remove("hidden");
+    return
   }
-
-  // No 2FA or already verified → go to app
-  otpVerified = true;
-  await bootApp();
+  await bootApp()
 });
 
+/* ── BOOT ── */
 async function bootApp(){
   document.getElementById("fullLoad").classList.add("hidden");
   show("appView");
-  document.getElementById("uAvatar").textContent = (CURRENT.name || CURRENT.email || "?").trim()[0].toUpperCase();
-  
-  // Start session timeout
-  startSessionTimeout();
-  
-  // Load companies
-  const qs = await db.collection("vault_companies").get();
-  const companies = qs.docs.map(d=>({id:d.id, ...d.data()}));
-  const list = document.getElementById("companySelectorList");
-  list.innerHTML = companies.map(c=>`<div style="padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="selectCompany('${c.id}')" onmouseover="this.style.background='var(--panel-2)'" onmouseout="this.style.background=''"><div style="font-weight:600;font-size:14px">${c.name}</div></div>`).join("");
+  document.getElementById("uName").textContent=CURRENT.name||CURRENT.email;
+  document.getElementById("uRole").textContent=CURRENT.role;
+  document.getElementById("uAvatar").textContent=(CURRENT.name||CURRENT.email||"?").trim()[0].toUpperCase();
+  const canWrite=CURRENT.role==="superadmin"||CURRENT.role==="admin";
+  document.getElementById("uploadBtn").style.display=canWrite?"inline-block":"none";
+  document.getElementById("newFolderBtn").style.display=canWrite?"inline-block":"none";
+  document.getElementById("adminCard").style.display=canWrite?"block":"none";
+  startSession();
+  await loadCompanies()
 }
 
-function startSessionTimeout(){
-  clearTimeout(sessionTimer);
-  clearTimeout(sessionWarningTimer);
-  
-  // Show warning at 25 min
-  sessionWarningTimer = setTimeout(() => {
-    document.getElementById("sessionWarning").classList.remove("hidden");
-    startCountdown();
-  }, SESSION_WARNING);
-  
-  // Auto-logout at 30 min
-  sessionTimer = setTimeout(() => {
-    toast("Session expired. Please login again.", "warn");
-    logout();
-  }, SESSION_TIMEOUT);
+function logout(){clearTimeout(sessionTimer);clearTimeout(sessionWarningTimer);auth.signOut()}
+
+/* ── COMPANIES ── */
+async function loadCompanies(){
+  const qs=await db.collection("vault_companies").get();
+  companies=qs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+  if(CURRENT.role!=="superadmin")companies=companies.filter(c=>(CURRENT.companies||[]).includes(c.id));
+  if(!companies.length){document.getElementById("contentArea").innerHTML='<div class="empty"><div class="big">🏢</div><div>No company assigned yet.</div></div>';return}
+  selectedCompanyId=companies[0].id;
+  document.getElementById("selectedCompanyName").textContent=companies[0].name;
+  document.getElementById("companySelectorList").innerHTML=companies.map(c=>`<div style="padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer" onmouseover="this.style.background='var(--panel-2)'" onmouseout="this.style.background=''" onclick="selectCompany('${c.id}')">${esc(c.name)}</div>`).join("");
+  await loadFolders()
 }
 
-function startCountdown(){
-  let remaining = 5 * 60; // 5 minutes
-  const update = () => {
-    const mins = Math.floor(remaining / 60);
-    const secs = remaining % 60;
-    document.getElementById("sessionCountdown").textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
-    remaining--;
-    if(remaining >= 0){
-      setTimeout(update, 1000);
-    }
-  };
-  update();
+function openCompanySelector(){if(companies.length>1)document.getElementById("companySelectorModal").classList.remove("hidden")}
+async function selectCompany(id){selectedCompanyId=id;selectedFolderId=null;closeModal("companySelectorModal");const c=companies.find(x=>x.id===id);if(c)document.getElementById("selectedCompanyName").textContent=c.name;await loadFolders()}
+
+/* ── FOLDERS ── */
+async function loadFolders(){
+  const qs=await db.collection("vault_companies").doc(selectedCompanyId).collection("folders").get();
+  const all=qs.docs.map(d=>({id:d.id,...d.data()}));
+  folderTree=all.filter(f=>!f.parent).map(f=>({...f,children:all.filter(c=>c.parent===f.id)}));
+  renderFolderTree();await loadDocs()
 }
-
-function extendSession(){
-  startSessionTimeout();
-  document.getElementById("sessionWarning").classList.add("hidden");
-  toast("Session extended.", "ok");
+function renderFolderTree(){
+  const t=document.getElementById("folderTree");
+  t.innerHTML='<button class="tree-node'+(selectedFolderId===null?" active":"")+ '" onclick="selectFolder(null)">📁 All Files</button>'+folderTree.map(f=>renderNode(f,0)).join("")
 }
-
-async function checkRateLimit(){
-  const today = new Date().toISOString().split('T')[0];
-  const limitDoc = await db.collection("vault_limits").doc(CURRENT.uid + "_" + today).get();
-  
-  if(!limitDoc.exists){
-    await db.collection("vault_limits").doc(CURRENT.uid + "_" + today).set({
-      userId: CURRENT.uid,
-      date: today,
-      uploadsCount: 0,
-      loginAttempts: 0,
-      lastUpload: Date.now(),
-      lastLogin: Date.now()
-    });
-    return RATE_LIMIT;
-  }
-  
-  const data = limitDoc.data();
-  const remaining = RATE_LIMIT - (data.uploadsCount || 0);
-  
-  if(remaining <= 0){
-    toast("Rate limit exceeded. Max 10 uploads/hour.", "err");
-    return 0;
-  }
-  
-  return remaining;
+function renderNode(f,level){
+  return`<div style="margin-left:${level*14}px"><button class="tree-node${selectedFolderId===f.id?" active":""}" onclick="selectFolder('${f.id}')">${f.children?.length?"📂":"📄"} ${esc(f.name)}</button>${(f.children||[]).map(c=>renderNode(c,level+1)).join("")}</div>`
 }
+function selectFolder(id){selectedFolderId=id;renderFolderTree();renderDocs()}
 
-async function selectCompany(id){
-  document.getElementById("selectedCompanyName").textContent = "Loading...";
-  closeModal("companySelectorModal");
-  await new Promise(r => setTimeout(r, 500));
-  document.getElementById("selectedCompanyName").textContent = "Kasera";
+/* ── DOCUMENTS ── */
+async function loadDocs(){
+  const qs=await db.collection("vault_companies").doc(selectedCompanyId).collection("documents").get();
+  documents=qs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.uploadedAt||0)-(a.uploadedAt||0));
+  renderDocs()
 }
-
-function openCompanySelector(){
-  const list = document.getElementById("companySelectorList");
-  document.getElementById("companySelectorModal").classList.remove("hidden");
+function renderDocs(){
+  const area=document.getElementById("contentArea");
+  const term=(document.getElementById("searchInput").value||"").toLowerCase();
+  let list=documents.slice();
+  if(selectedFolderId!==null&&selectedFolderId!==undefined)list=list.filter(d=>d.folderId===selectedFolderId);
+  else if(selectedFolderId===null)list=list;
+  if(term)list=list.filter(d=>(d.name||"").toLowerCase().includes(term)||(d.description||"").toLowerCase().includes(term));
+  document.getElementById("contentTitle").textContent=selectedFolderId?getFolderName(selectedFolderId):"All Files";
+  if(!list.length){area.innerHTML='<div class="empty"><div class="big">📂</div><div>No documents here yet.</div></div>';return}
+  const canDel=CURRENT.role!=="viewer";
+  area.innerHTML='<div class="doc-grid">'+list.map(d=>{const ext=(d.name||"").split(".").pop().slice(0,4)||"DOC";return`<div class="doc-card"><div style="display:flex;gap:11px;align-items:flex-start"><div class="file-ic" style="background:${colorFor(ext)}">${esc(ext)}</div><div class="doc-name">${esc(d.name)}</div></div>${d.description?`<div class="doc-desc">${esc(d.description)}</div>`:""}<div class="doc-meta">By ${esc(d.uploadedByName||"—")} · ${fmtDate(d.uploadedAt)}<br>${fmtSize(d.size)}</div><div class="doc-actions"><button class="btn btn-sm" onclick="downloadDoc('${d.id}')">⬇ Download</button>${canDel?`<button class="btn btn-ghost btn-sm" onclick="softDelete('${d.id}')">🗑</button>`:""}</div></div>`}).join("")+"</div>"
 }
+function getFolderName(id){const f=folderTree.find(x=>x.id===id)||folderTree.flatMap(x=>x.children||[]).find(x=>x.id===id);return f?f.name:"Folder"}
+function downloadDoc(id){const d=documents.find(x=>x.id===id);if(d)window.open("https://drive.google.com/uc?export=download&id="+d.fileId,"_blank")}
 
-function closeModal(id){document.getElementById(id).classList.add("hidden")}
-
+/* ── UPLOAD ── */
 async function openUpload(){
-  const remaining = await checkRateLimit();
-  document.getElementById("uploadsRemaining").textContent = remaining;
-  document.getElementById("uploadModal").classList.remove("hidden");
+  const remaining=await checkRateLimit();
+  const badge=document.getElementById("rateLimitBadge");
+  badge.textContent=`${remaining>0?"✓":"✗"} ${remaining}/${RATE_LIMIT} uploads remaining this hour`;
+  badge.className="rate-badge "+(remaining>5?"rate-ok":remaining>2?"rate-warn":"rate-danger");
+  if(!remaining){toast("Rate limit reached. Try in an hour.","err");return}
+  pickedFile=null;document.getElementById("fileZone").className="filezone";document.getElementById("fileZoneText").textContent="📎 Click or drag file here";document.getElementById("upDesc").value="";
+  const path=selectedFolderId?getFolderName(selectedFolderId):"Root";document.getElementById("folderPathDisplay").textContent=path;
+  document.getElementById("uploadModal").classList.remove("hidden")
 }
-
+function onFilePick(){const f=document.getElementById("fileInput").files[0];if(!f)return;if(f.size>26*1024*1024){toast("File too large (max 25 MB).","err");return}pickedFile=f;document.getElementById("fileZone").className="filezone has";document.getElementById("fileZoneText").textContent=`${f.name} · ${fmtSize(f.size)}`}
+const fz=document.getElementById("fileZone");
+fz.addEventListener("dragover",e=>{e.preventDefault();fz.classList.add("drag")});
+fz.addEventListener("dragleave",()=>fz.classList.remove("drag"));
+fz.addEventListener("drop",e=>{e.preventDefault();fz.classList.remove("drag");const f=e.dataTransfer.files[0];if(f){document.getElementById("fileInput").files=e.dataTransfer.files;onFilePick()}});
+function f2b64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(",")[1]);r.onerror=()=>rej(new Error("Read error"));r.readAsDataURL(file)})}
 async function submitUpload(){
-  const file = document.getElementById("fileInput").files[0];
-  if(!file){toast("Choose file.","err"); return}
-  
-  const remaining = await checkRateLimit();
-  if(remaining <= 0){toast("Rate limit exceeded.","err"); return}
-  
-  // Update limit
-  const today = new Date().toISOString().split('T')[0];
-  await db.collection("vault_limits").doc(CURRENT.uid + "_" + today).update({uploadsCount: firebase.firestore.FieldValue.increment(1)});
-  
-  toast("Uploaded.","ok");
-  closeModal("uploadModal");
+  if(!pickedFile){toast("Choose a file.","err");return}
+  const remaining=await checkRateLimit();if(!remaining){toast("Rate limit exceeded.","err");return}
+  const btn=document.getElementById("upBtn");btn.disabled=true;const old=btn.innerHTML;btn.innerHTML='<span class="loader"></span>';
+  try{
+    const company=companies.find(c=>c.id===selectedCompanyId);
+    const b64=await f2b64(pickedFile);
+    const r=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"upload",companyName:company.name,fileName:pickedFile.name,mimeType:pickedFile.type||"application/octet-stream",fileData:b64})});
+    const res=await r.json();
+    if(!res.success)throw new Error(res.error||"Upload failed");
+    const compRef=db.collection("vault_companies").doc(selectedCompanyId);
+    await compRef.collection("documents").add({name:pickedFile.name,folderId:selectedFolderId||null,description:document.getElementById("upDesc").value.trim(),fileId:res.fileId,mimeType:pickedFile.type||"application/octet-stream",size:res.size||pickedFile.size,uploadedBy:CURRENT.uid,uploadedByName:CURRENT.name||CURRENT.email,uploadedAt:Date.now()});
+    await logActivity("upload",pickedFile.name,"document",{size:pickedFile.size});
+    await updateRateLimit();
+    closeModal("uploadModal");toast("Uploaded successfully!","ok");await loadDocs()
+  }catch(e){toast(e.message||"Upload failed","err")}
+  finally{btn.disabled=false;btn.innerHTML=old}
 }
 
-function show(id){
-  ["loginView","authPage","appView"].forEach(v => document.getElementById(v).classList.add("hidden"));
-  document.getElementById(id).classList.remove("hidden");
+/* ── RATE LIMIT ── */
+async function checkRateLimit(){
+  const today=new Date().toISOString().split("T")[0];
+  const docId=CURRENT.uid+"_"+today;
+  try{
+    const snap=await db.collection("vault_limits").doc(docId).get();
+    if(!snap.exists)return RATE_LIMIT;
+    return Math.max(0,RATE_LIMIT-(snap.data().uploadsCount||0))
+  }catch{return RATE_LIMIT}
+}
+async function updateRateLimit(){
+  const today=new Date().toISOString().split("T")[0];
+  const docId=CURRENT.uid+"_"+today;
+  const snap=await db.collection("vault_limits").doc(docId).get();
+  if(snap.exists)await db.collection("vault_limits").doc(docId).update({uploadsCount:firebase.firestore.FieldValue.increment(1)});
+  else await db.collection("vault_limits").doc(docId).set({userId:CURRENT.uid,date:today,uploadsCount:1,lastUpload:Date.now()})
 }
 
-let toastTimer;
-function toast(msg, kind){
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.className = "show" + (kind ? " "+kind : "");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {t.className = t.className.replace("show","").trim()}, 3200);
+/* ── SOFT DELETE & TRASH ── */
+async function softDelete(docId){
+  const d=documents.find(x=>x.id===docId);if(!d)return;
+  if(!confirm(`Move "${d.name}" to trash?`))return;
+  const compRef=db.collection("vault_companies").doc(selectedCompanyId);
+  await compRef.collection("vault_trash").add({originalDocId:docId,name:d.name,folderId:d.folderId||null,description:d.description,fileId:d.fileId,mimeType:d.mimeType,size:d.size,deletedBy:CURRENT.uid,deletedAt:Date.now(),originalUploadedBy:d.uploadedBy,expiresAt:Date.now()+30*24*60*60*1000});
+  await compRef.collection("documents").doc(docId).delete();
+  await logActivity("delete",d.name,"document",{});
+  toast("Moved to trash.","ok");await loadDocs()
+}
+async function loadTrash(){
+  const qs=await db.collection("vault_companies").doc(selectedCompanyId).collection("vault_trash").get();
+  const items=qs.docs.map(d=>({id:d.id,...d.data()})).filter(i=>i.expiresAt>Date.now());
+  const list=document.getElementById("trashList");
+  list.innerHTML=items.length?items.map(i=>`<div class="trash-item"><div><div class="trash-name">${esc(i.name)}</div><div class="trash-time">Deleted ${fmtDate(i.deletedAt)} · Expires ${fmtDate(i.expiresAt)}</div></div><div style="display:flex;gap:8px"><button class="btn btn-sm" onclick="restoreTrash('${i.id}')">Restore</button><button class="btn btn-ghost btn-sm btn-danger" onclick="purgeTrash('${i.id}')">Delete</button></div></div>`).join(""):'<div class="empty"><div class="big">✨</div><div>Trash is empty.</div></div>'
+}
+async function restoreTrash(trashId){
+  const compRef=db.collection("vault_companies").doc(selectedCompanyId);
+  const trash=(await compRef.collection("vault_trash").doc(trashId).get()).data();
+  await compRef.collection("documents").add({name:trash.name,folderId:trash.folderId||null,description:trash.description,fileId:trash.fileId,mimeType:trash.mimeType,size:trash.size,uploadedBy:trash.originalUploadedBy,uploadedByName:CURRENT.name,uploadedAt:Date.now()});
+  await compRef.collection("vault_trash").doc(trashId).delete();
+  await logActivity("restore",trash.name,"document",{});
+  toast("Restored!","ok");await loadDocs();loadTrash()
+}
+async function purgeTrash(trashId){
+  if(!confirm("Permanently delete? Cannot undo."))return;
+  await db.collection("vault_companies").doc(selectedCompanyId).collection("vault_trash").doc(trashId).delete();
+  toast("Permanently deleted.","ok");loadTrash()
 }
 
-// Auto-reset session on user activity
-["mousemove", "keypress", "click"].forEach(event => {
-  document.addEventListener(event, () => {
-    if(CURRENT) startSessionTimeout();
-  }, true);
-});
+/* ── ACTIVITY LOG ── */
+async function logActivity(action,targetName,targetType,details={}){
+  if(!selectedCompanyId)return;
+  await db.collection("vault_companies").doc(selectedCompanyId).collection("vault_activity").add({action,targetName,targetType,performedBy:CURRENT.uid,performedByName:CURRENT.name||CURRENT.email,timestamp:Date.now(),details})
+}
+async function loadActivity(){
+  const qs=await db.collection("vault_companies").doc(selectedCompanyId).collection("vault_activity").orderBy("timestamp","desc").limit(100).get();
+  const items=qs.docs.map(d=>d.data());
+  document.getElementById("activityList").innerHTML=items.length?items.map(i=>`<div class="activity-item"><div class="activity-time">${fmtDate(i.timestamp)}</div><div class="activity-action">${i.action.toUpperCase()}: ${esc(i.targetName)}</div><div class="activity-user">by ${esc(i.performedByName||"—")}</div></div>`).join(""):'<div class="empty"><div class="big">📋</div><div>No activity yet.</div></div>'
+}
 
-document.getElementById("authEmail")?.addEventListener("keypress", function(e) { if(e.key === "Enter") doAuth() });
-document.getElementById("authPass")?.addEventListener("keypress", function(e) { if(e.key === "Enter") doAuth() });
-document.getElementById("otpCode")?.addEventListener("keypress", function(e) { if(e.key === "Enter") verifyOTP() });
+/* ── TABS ── */
+function switchTab(tab,btn){
+  ["filesTab","activityTab","trashTab"].forEach(t=>document.getElementById(t).classList.add("hidden"));
+  document.getElementById(tab+"Tab").classList.remove("hidden");
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  if(btn)btn.classList.add("active");
+  document.getElementById("folderSection").style.display=tab==="files"?"block":"none";
+  if(tab==="activity")loadActivity();
+  if(tab==="trash")loadTrash()
+}
+
+/* ── FOLDERS ── */
+async function openNewFolder(){
+  const name=prompt("Folder name:");if(!name)return;
+  await db.collection("vault_companies").doc(selectedCompanyId).collection("folders").add({name,parent:selectedFolderId||null,createdAt:Date.now(),createdBy:CURRENT.uid});
+  await logActivity("create_folder",name,"folder",{});
+  toast("Folder created.","ok");await loadFolders()
+}
+
+/* ── UTILS ── */
+function show(id){["authPage","appView"].forEach(v=>document.getElementById(v).classList.add("hidden"));document.getElementById(id).classList.remove("hidden")}
+function closeModal(id){document.getElementById(id).classList.add("hidden")}
+let _tt;function toast(msg,kind){const t=document.getElementById("toast");t.textContent=msg;t.className="show"+(kind?" "+kind:"");clearTimeout(_tt);_tt=setTimeout(()=>{t.className=t.className.replace("show","").trim()},3200)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function fmtSize(b){if(!b)return"";const u=["B","KB","MB","GB"];let i=0,n=b;while(n>=1024&&i<3){n/=1024;i++}return n.toFixed(i?1:0)+" "+u[i]}
+function fmtDate(ts){if(!ts)return"—";return new Date(ts).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"})}
+function colorFor(ext){const m={pdf:"#dc2b46",doc:"#2f5bea",docx:"#2f5bea",xls:"#0f9d6e",xlsx:"#0f9d6e",csv:"#0f9d6e",png:"#7c3aed",jpg:"#7c3aed",jpeg:"#7c3aed",ppt:"#d97706",pptx:"#d97706",zip:"#64748b",txt:"#475569"};return m[(ext||"").toLowerCase()]||"#475569"}
+
+/* ── KEY EVENTS ── */
+document.getElementById("authEmail")?.addEventListener("keypress",e=>{if(e.key==="Enter")doAuth()});
+document.getElementById("authPass")?.addEventListener("keypress",e=>{if(e.key==="Enter")doAuth()});
+document.querySelectorAll(".modal-bg").forEach(bg=>bg.addEventListener("click",e=>{if(e.target===bg)bg.classList.add("hidden")}));
 </script>
 </body>
 </html>
