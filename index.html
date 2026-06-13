@@ -416,7 +416,7 @@ async function verifyOTP(){
   const stored=sessionStorage.getItem("vault_otp");
   const otpTime=parseInt(sessionStorage.getItem("vault_otp_time")||"0");
   if(Date.now()-otpTime>10*60*1000){setOtpMsg("Code expired. Resend.","err");return}
-  if(entered===stored){sessionStorage.removeItem("vault_otp");sessionStorage.removeItem("vault_otp_time");await bootApp()}
+  if(entered===stored){sessionStorage.removeItem("vault_otp");sessionStorage.removeItem("vault_otp_time");sessionStorage.setItem("vault_2fa_verified_"+auth.currentUser.uid,"1");await bootApp()}
   else setOtpMsg("Wrong code. Try again.","err")
 }
 async function resendOTP(){
@@ -447,11 +447,16 @@ auth.onAuthStateChanged(async(user)=>{
     snap=await db.collection("vault_users").doc(user.uid).get()
   }
   CURRENT={uid:user.uid,...snap.data()};
+  const isSuperAdmin=CURRENT.role==="superadmin";
   const twoFA=await db.collection("vault_2fa_settings").doc(user.uid).get();
-  if(twoFA.exists&&twoFA.data().enabled){
+  const twoFAEnabled=isSuperAdmin||(twoFA.exists&&twoFA.data().enabled);
+  if(twoFAEnabled&&!sessionStorage.getItem("vault_2fa_verified_"+user.uid)){
     const otp=Math.floor(100000+Math.random()*900000).toString();
     sessionStorage.setItem("vault_otp",otp);sessionStorage.setItem("vault_otp_time",Date.now().toString());
-    console.log("Demo OTP:",otp);alert("Demo OTP: "+otp);
+    console.log("OTP:",otp);alert("🔐 Two-Factor Verification
+
+OTP: "+otp+"
+(Production: sent to email)");
     document.getElementById("fullLoad").classList.add("hidden");
     show("authPage");document.getElementById("passwordScreen").classList.add("hidden");document.getElementById("otpScreen").classList.remove("hidden");
     return
@@ -669,8 +674,48 @@ async function loadActivity(){
 async function loadUsers(){
   const qs=await db.collection("vault_users").get();
   const users=qs.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
-  document.getElementById("usersList").innerHTML=users.length?`<div style="background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden"><table class="user-table"><thead><tr><th>User</th><th>Role</th><th>Companies</th><th>Actions</th></tr></thead><tbody>`+users.map(u=>`<tr><td><span class="user-avatar">${(u.name||u.email||"?")[0].toUpperCase()}</span><strong>${esc(u.name||"—")}</strong><br><span style="font-size:11px;color:var(--muted)">${esc(u.email)}</span></td><td><span class="role-badge role-${u.role}">${u.role}</span></td><td style="font-size:12px;color:var(--muted)">${(u.companies||[]).length?u.companies.join(", "):"All"}</td><td><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="openEditUser('${u.id}')">✏️ Edit</button>${u.id!==CURRENT.uid?`<button class="btn btn-ghost btn-sm btn-danger" onclick="deleteUser('${u.id}','${esc(u.name||u.email)}')">Delete</button>`:""}</div></td></tr>`).join("")+"</tbody></table></div>":'<div class="empty"><div class="big">👥</div><div>No users found.</div></div>'
+  // Fetch 2FA status for each user
+  for(let u of users){
+    try{
+      const s=await db.collection("vault_2fa_settings").doc(u.id).get();
+      u.twoFA=s.exists&&s.data().enabled;
+      u.twoFAForced=u.role==="superadmin";
+    }catch{u.twoFA=false}
+  }
+  if(!users.length){document.getElementById("usersList").innerHTML='<div class="empty"><div class="big">👥</div><div>No users found.</div></div>';return}
+  let html='<div style="background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden"><table class="user-table"><thead><tr><th>User</th><th>Role</th><th>2FA</th><th>Companies</th><th>Actions</th></tr></thead><tbody>';
+  for(const u of users){
+    const initials=(u.name||u.email||"?")[0].toUpperCase();
+    const companiesText=(u.companies||[]).length?u.companies.join(", "):"All";
+    const twoFALabel=u.twoFAForced?"🔐 Forced":(u.twoFA?"🔐 ON":"🔓 OFF");
+    const twoFAStyle=u.twoFA||u.twoFAForced?"background:rgba(15,157,110,.15);color:#0f9d6e":"background:rgba(107,107,130,.12);color:#6b6b82";
+    const twoFAClick=u.twoFAForced?"":`onclick="toggle2FA('${u.id}','${esc(u.name||u.email)}',${u.twoFA})"`;
+    html+=`<tr>
+      <td><span class="user-avatar">${initials}</span><strong>${esc(u.name||"—")}</strong><br><span style="font-size:11px;color:var(--muted)">${esc(u.email)}</span></td>
+      <td><span class="role-badge role-${u.role}">${u.role}</span></td>
+      <td><button ${twoFAClick} style="border:none;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:600;cursor:${u.twoFAForced?"default":"pointer"};${twoFAStyle}">${twoFALabel}</button></td>
+      <td style="font-size:12px;color:var(--muted)">${esc(companiesText)}</td>
+      <td><div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="openEditUser('${u.id}')">✏️ Edit</button>
+        ${u.id!==CURRENT.uid?`<button class="btn btn-ghost btn-sm btn-danger" onclick="deleteUser('${u.id}','${esc(u.name||u.email)}')">Delete</button>`:""}
+      </div></td>
+    </tr>`;
+  }
+  html+="</tbody></table></div>";
+  document.getElementById("usersList").innerHTML=html;
 }
+
+async function toggle2FA(userId, name, currentState){
+  const newState=!currentState;
+  try{
+    await db.collection("vault_2fa_settings").doc(userId).set({enabled:newState,updatedAt:Date.now(),updatedBy:CURRENT.uid});
+    await logActivity(newState?"enable_2fa":"disable_2fa",name,"user",{});
+    toast(`2FA ${newState?"enabled 🔐":"disabled 🔓"} for ${name}.`,newState?"ok":"warn");
+    await loadUsers()
+  }catch(e){toast("Failed to update 2FA.","err")}
+}
+
+
 async function openAddUser(){
   const cbxEl=document.getElementById("companyCheckboxes");
   cbxEl.innerHTML=companies.map(c=>`<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" value="${c.id}" style="width:16px;height:16px"> ${esc(c.name)}</label>`).join("");
@@ -719,6 +764,15 @@ async function submitEditUser(){
     await logActivity("edit_user",editingUserId,"user",{role});
     closeModal("editUserModal");toast("User updated!","ok");await loadUsers()
   }catch(e){setMsg("editUserMsg",prettyErr(e),"err")}
+}
+async function toggle2FA(userId, name, currentState){
+  const newState = !currentState;
+  try{
+    await db.collection("vault_2fa_settings").doc(userId).set({enabled: newState, updatedAt: Date.now(), updatedBy: CURRENT.uid});
+    await logActivity(newState?"enable_2fa":"disable_2fa", name, "user", {});
+    toast(`2FA ${newState?"enabled":"disabled"} for ${name}.`, newState?"ok":"warn");
+    await loadUsers()
+  }catch(e){toast("Failed to update 2FA.","err")}
 }
 async function deleteUser(userId,name){
   if(!confirm(`Delete user "${name}"? They will lose all access.`))return;
