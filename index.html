@@ -27,6 +27,8 @@ h1,h2,h3,.brand-name,.btn{font-family:'Poppins','Inter',sans-serif}
 
 /* AUTH */
 #authPage{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(1200px 600px at 80% -10%,rgba(124,58,237,.30),transparent),radial-gradient(900px 500px at -10% 110%,rgba(249,115,22,.18),transparent),#1d1340}
+.auth-back{position:fixed;top:22px;left:22px;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:9px 18px;font-weight:600;font-size:13px;cursor:pointer;z-index:10}
+.auth-back:hover{background:rgba(255,255,255,.25)}
 .auth-card{width:100%;max-width:400px;background:#fff;border-radius:18px;padding:32px 30px;box-shadow:0 24px 60px rgba(0,0,0,.32)}
 .gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:12px;border:1px solid var(--line);border-radius:999px;background:#fff;font-weight:600;font-size:14.5px;color:var(--ink);cursor:pointer}
 .gbtn:hover{background:var(--panel-2)}
@@ -140,6 +142,23 @@ main.content{flex:1;min-width:0}
 .otp-inputs input{width:46px;height:54px;text-align:center;font-size:22px;font-weight:700;border:2px solid var(--line);border-radius:10px;background:#fbfcfe}
 .otp-inputs input:focus{outline:none;border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.15)}
 
+/* LANDING PAGE */
+.lp{min-height:100vh;background:var(--panel-2);display:flex;flex-direction:column}
+.lp-bar{background:linear-gradient(90deg,#7c3aed,#9d5cf5);color:#fff;text-align:center;font-size:13px;font-weight:500;padding:10px 16px}
+.lp-nav{max-width:1040px;width:calc(100% - 32px);margin:16px auto 0;background:#fff;border-radius:16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;padding:12px 20px}
+.lp-hero{flex:1;max-width:820px;margin:0 auto;padding:56px 24px 32px;text-align:center}
+.lp-hero h1{font-size:clamp(30px,6vw,52px);line-height:1.08;margin:0 0 16px;color:var(--ink);font-family:'Poppins',sans-serif}
+.lp-hero h1 .grad{background:linear-gradient(90deg,#f97316,#fdba74);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lp-hero p{font-size:clamp(15px,2.2vw,18px);color:var(--muted);line-height:1.55;max-width:580px;margin:0 auto 24px}
+.lp-pills{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:28px}
+.lp-pill{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:500}
+.lp-pill .ck{width:18px;height:18px;border-radius:50%;background:#7c3aed;color:#fff;display:grid;place-items:center;font-size:10px;flex-shrink:0}
+.lp-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:48px}
+.lp-features{max-width:980px;margin:0 auto 56px;padding:0 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.lp-feat{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px}
+.lp-feat .ic{font-size:24px;margin-bottom:8px}
+.lp-feat h3{margin:0 0 6px;font-size:15px;font-family:'Poppins',sans-serif}
+.lp-feat p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 22px;border-radius:10px;font-size:13.5px;opacity:0;transition:.25s;z-index:80;pointer-events:none;max-width:90vw}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #toast.err{background:#dc2b46}#toast.ok{background:#0f9d6e}#toast.warn{background:#d97706}
@@ -155,8 +174,43 @@ main.content{flex:1;min-width:0}
 
 <div id="fullLoad"><div style="text-align:center"><div class="loader" style="width:32px;height:32px;border-width:3px"></div><div style="margin-top:14px;font-size:14px;opacity:.7">Loading vault…</div></div></div>
 
+<!-- LANDING PAGE -->
+<div id="loginView" class="hidden">
+  <div class="lp">
+    <div class="lp-bar">🔒 Enterprise-grade security · Activity Logs · Trash Recovery · 2FA Protection</div>
+    <nav class="lp-nav">
+      <div class="brand"><div class="brand-mark">🗄️</div><div class="brand-name">Document Vault</div></div>
+      <div class="spacer"></div>
+      <button class="btn btn-violet btn-sm" onclick="show('authPage')">Sign in →</button>
+    </nav>
+    <div class="lp-hero">
+      <h1>All your company documents,<br><span class="grad">in one secure vault</span></h1>
+      <p>Upload, organize and download important files. Track every action. Restore deleted files. Multi-company support with role-based access.</p>
+      <div class="lp-pills">
+        <span class="lp-pill"><span class="ck">✓</span> 2FA Login</span>
+        <span class="lp-pill"><span class="ck">✓</span> Activity Logs</span>
+        <span class="lp-pill"><span class="ck">✓</span> Trash & Restore</span>
+        <span class="lp-pill"><span class="ck">✓</span> Bulk Upload</span>
+        <span class="lp-pill"><span class="ck">✓</span> Role-based Access</span>
+      </div>
+      <div class="lp-cta">
+        <button class="btn" style="padding:14px 28px;font-size:15px" onclick="show('authPage')">Get Started →</button>
+      </div>
+    </div>
+    <div class="lp-features">
+      <div class="lp-feat"><div class="ic">🔐</div><h3>Two-Factor Auth</h3><p>OTP via email and WhatsApp for every login. Superadmin always protected.</p></div>
+      <div class="lp-feat"><div class="ic">📋</div><h3>Activity Log</h3><p>Complete audit trail. See who uploaded, deleted or restored files and when.</p></div>
+      <div class="lp-feat"><div class="ic">🗑️</div><h3>Trash & Restore</h3><p>Deleted files recoverable for 30 days. Permanent delete only when you choose.</p></div>
+      <div class="lp-feat"><div class="ic">📁</div><h3>Bulk Upload</h3><p>Upload multiple files at once with progress tracking. Drag and drop support.</p></div>
+      <div class="lp-feat"><div class="ic">👥</div><h3>User Management</h3><p>Add users, assign roles and control company access from one panel.</p></div>
+      <div class="lp-feat"><div class="ic">🏢</div><h3>Multi-company</h3><p>Manage documents for multiple companies with complete data isolation.</p></div>
+    </div>
+  </div>
+</div>
+
 <!-- AUTH -->
 <div id="authPage" class="hidden">
+  <button class="auth-back" onclick="show('loginView')">← Back</button>
   <div class="auth-card">
     <div class="brand" style="justify-content:center;margin-bottom:14px">
       <div class="brand-mark">🗄️</div><div class="brand-name">Document Vault</div>
@@ -221,6 +275,7 @@ main.content{flex:1;min-width:0}
         <button class="tab-btn" onclick="switchTab('activity',this)">📋 Activity Log</button>
         <button class="tab-btn" onclick="switchTab('trash',this)">🗑️ Trash</button>
         <button class="tab-btn" id="usersTabBtn" onclick="switchTab('users',this)" style="display:none">👥 Users</button>
+        <button class="tab-btn" id="logsTabBtn" onclick="switchTab('logs',this)" style="display:none">📊 All Logs</button>
       </div>
       <div class="side-card" id="folderSection">
         <h3>Folders</h3>
@@ -230,6 +285,8 @@ main.content{flex:1;min-width:0}
         <h3>Admin</h3>
         <button class="tab-btn" onclick="openNewFolder()">📂 New Folder</button>
         <button class="tab-btn" onclick="switchTab('users',document.getElementById('usersTabBtn'))">👥 Manage Users</button>
+        <button class="tab-btn" id="addCompanyBtn" onclick="openAddCompany()" style="display:none">🏢 Add Company</button>
+        <button class="tab-btn" onclick="switchTab('logs',document.getElementById('logsTabBtn'))">📊 All Logs</button>
       </div>
     </aside>
 
@@ -264,9 +321,18 @@ main.content{flex:1;min-width:0}
       <div id="usersTab" class="hidden">
         <div class="content-head">
           <h2>👥 User Management</h2>
-          <button class="btn btn-violet" onclick="openAddUser()">+ Add User</button>
+          <button class="btn btn-violet" id="addUserBtn2" onclick="openAddUser()">+ Add User</button>
         </div>
         <div id="usersList"></div>
+      </div>
+
+      <!-- ALL LOGS (superadmin only) -->
+      <div id="logsTab" class="hidden">
+        <div class="content-head">
+          <h2>📊 All System Logs</h2>
+          <button class="btn btn-ghost btn-sm" onclick="loadAllLogs()">🔄 Refresh</button>
+        </div>
+        <div id="logsList"></div>
       </div>
     </main>
   </div>
@@ -322,11 +388,18 @@ main.content{flex:1;min-width:0}
         <div class="pwd-toggle"><input id="newUserPass" type="password" placeholder="Min 6 characters"/><button type="button" class="toggle-btn" onclick="toggleNewPwd()">👁️</button></div>
       </div>
       <div class="field"><label>Role</label>
-        <select id="newUserRole">
+        <select id="newUserRole" onchange="toggleCanAddUsers(this.value)">
           <option value="viewer">Viewer (can view + download only)</option>
           <option value="admin">Admin (can upload + delete)</option>
           <option value="superadmin">Super Admin (full access)</option>
         </select>
+      </div>
+      <div class="field" id="canAddUsersField" style="display:none">
+        <label>Admin Permissions</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px;background:var(--panel-2);border-radius:8px">
+          <input type="checkbox" id="newUserCanAddUsers" style="width:16px;height:16px">
+          Can add/manage users
+        </label>
       </div>
       <div class="field"><label>Company Access</label>
         <div id="companyCheckboxes" style="display:flex;flex-direction:column;gap:8px;padding:10px;background:var(--panel-2);border-radius:8px"></div>
@@ -447,8 +520,7 @@ async function sendOTP(email,phone,name,otp){
       await fetch(WA_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({authToken:WA_AUTH,originWebsite:"kaseraindustries.in",to:p,templateName:"service_ticket_confirmation",parameters:[{type:"text",text:name||"User"},{type:"text",text:"OTP: "+otp+" (10 min)"}]})});
     }catch(e){console.warn("WhatsApp OTP failed:",e)}
   }
-  console.log("OTP for",email,":",otp);
-  if(!phone){const msg="OTP: "+otp+" | Sent to: "+email;alert(msg);}
+  // OTP sent silently via email + WhatsApp only (no alert, no console log)
 }
 
 function setOtpMsg(t,k){const el=document.getElementById("otpMsg");el.textContent=t||"";el.className="auth-msg"+(k?" "+k:"")}
@@ -468,7 +540,7 @@ auth.onAuthStateChanged(async(user)=>{
   if(!user){
     CURRENT=null;
     document.getElementById("fullLoad").classList.add("hidden");
-    show("authPage");
+    show("loginView");
     document.getElementById("passwordScreen").classList.remove("hidden");
     document.getElementById("otpScreen").classList.add("hidden");
     return;
@@ -515,10 +587,16 @@ async function bootApp(){
   document.getElementById("uAvatar").textContent=(CURRENT.name||CURRENT.email||"?").trim()[0].toUpperCase();
   const canWrite=CURRENT.role==="superadmin"||CURRENT.role==="admin";
   const isSuper=CURRENT.role==="superadmin";
+  const canAddUsers=isSuper||(CURRENT.role==="admin"&&CURRENT.canAddUsers===true);
   document.getElementById("uploadBtn").style.display=canWrite?"inline-block":"none";
   document.getElementById("newFolderBtn").style.display=canWrite?"inline-block":"none";
-  document.getElementById("adminCard").style.display=isSuper?"block":"none";
-  document.getElementById("usersTabBtn").style.display=isSuper?"flex":"none";
+  document.getElementById("adminCard").style.display=canWrite?"block":"none";
+  // Company creation: superadmin ONLY
+  document.getElementById("addCompanyBtn").style.display=isSuper?"flex":"none";
+  // Users tab: superadmin OR admin with canAddUsers permission
+  document.getElementById("usersTabBtn").style.display=canAddUsers?"flex":"none";
+  // All Logs tab: superadmin ONLY
+  document.getElementById("logsTabBtn").style.display=isSuper?"flex":"none";
   startSession();
   await loadCompanies()
 }
@@ -773,13 +851,14 @@ async function submitAddUser(){
   const email=document.getElementById("newUserEmail").value.trim();
   const pass=document.getElementById("newUserPass").value;
   const role=document.getElementById("newUserRole").value;
+  const canAddUsers=role==="admin"&&document.getElementById("newUserCanAddUsers")?.checked===true;
   const selectedCompanies=Array.from(document.querySelectorAll("#companyCheckboxes input:checked")).map(i=>i.value);
   if(!name||!email||!pass){setMsg("addUserMsg","Fill all fields.","err");return}
   if(pass.length<6){setMsg("addUserMsg","Password min 6 chars.","err");return}
   const btn=document.getElementById("addUserBtn");btn.disabled=true;const old=btn.innerHTML;btn.innerHTML='<span class="loader"></span>';
   try{
     const cred=await secondaryAuth.createUserWithEmailAndPassword(email,pass);
-    await db.collection("vault_users").doc(cred.user.uid).set({email,name,role,companies:selectedCompanies,createdAt:Date.now(),createdBy:CURRENT.uid});
+    await db.collection("vault_users").doc(cred.user.uid).set({email,name,role,canAddUsers,companies:selectedCompanies,createdAt:Date.now(),createdBy:CURRENT.uid});
     await secondaryAuth.signOut();
     await logActivity("add_user",name,"user",{email,role});
     closeModal("addUserModal");toast(`User "${name}" created!`,"ok");await loadUsers()
@@ -828,18 +907,62 @@ function setMsg(id,t,k){const el=document.getElementById(id);el.textContent=t||"
 
 /* TABS */
 function switchTab(tab,btn){
-  ["filesTab","activityTab","trashTab","usersTab"].forEach(t=>document.getElementById(t).classList.add("hidden"));
-  document.getElementById(tab+"Tab").classList.remove("hidden");
+  ["filesTab","activityTab","trashTab","usersTab","logsTab"].forEach(t=>{
+    const el=document.getElementById(t);if(el)el.classList.add("hidden");
+  });
+  const tabEl=document.getElementById(tab+"Tab");if(tabEl)tabEl.classList.remove("hidden");
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
   if(btn)btn.classList.add("active");
   document.getElementById("folderSection").style.display=tab==="files"?"block":"none";
   if(tab==="activity")loadActivity();
   if(tab==="trash")loadTrash();
-  if(tab==="users")loadUsers()
+  if(tab==="users")loadUsers();
+  if(tab==="logs")loadAllLogs();
+}
+
+function toggleCanAddUsers(role){
+  const field=document.getElementById("canAddUsersField");
+  if(field) field.style.display=role==="admin"?"block":"none";
+}
+
+async function openAddCompany(){
+  const name=prompt("Company name (e.g. Kasera Industries):");if(!name)return;
+  const id=name.toLowerCase().replace(/[^a-z0-9]/g,"_").replace(/__+/g,"_");
+  try{
+    await db.collection("vault_companies").doc(id).set({name,createdAt:Date.now(),createdBy:CURRENT.uid});
+    await logActivity("create_company",name,"company",{id});
+    toast("Company created: "+name,"ok");
+    await loadCompanies();
+  }catch(e){toast("Failed: "+e.message,"err")}
+}
+
+async function loadAllLogs(){
+  if(CURRENT.role!=="superadmin"){toast("Access denied.","err");return}
+  document.getElementById("logsList").innerHTML='<div style="text-align:center;padding:30px"><span class="loader"></span></div>';
+  try{
+    // Load activity logs from ALL companies
+    const allLogs=[];
+    for(const c of companies){
+      const qs=await db.collection("vault_companies").doc(c.id).collection("vault_activity").orderBy("timestamp","desc").limit(50).get();
+      qs.docs.forEach(d=>allLogs.push({...d.data(),companyName:c.name}));
+    }
+    // Also load rate limits, sessions
+    const limits=await db.collection("vault_limits").get();
+    const limitData=limits.docs.map(d=>({...d.data(),id:d.id}));
+    allLogs.sort((a,b)=>b.timestamp-a.timestamp);
+    const icons={upload:"📤",delete:"🗑️",restore:"↩️",create_folder:"📂",login:"🔑",add_user:"👤",edit_user:"✏️",delete_user:"❌",enable_2fa:"🔐",disable_2fa:"🔓",create_company:"🏢"};
+    let html='<div style="margin-bottom:16px;padding:12px;background:rgba(124,58,237,.08);border-radius:10px;font-size:13px"><strong>Rate Limits Today:</strong> ';
+    const today=new Date().toISOString().split("T")[0];
+    const todayLimits=limitData.filter(l=>l.date===today);
+    html+=todayLimits.length?todayLimits.map(l=>`${esc(l.userId||"?")}: ${l.uploadsCount||0} uploads`).join(" · "):"No uploads today";
+    html+='</div>';
+    html+=allLogs.length?allLogs.map(l=>`<div class="activity-item"><div class="activity-icon ${l.action||''}">${icons[l.action]||"📋"}</div><div class="activity-body"><div class="activity-action">${(l.action||"").replace(/_/g," ").toUpperCase()}: ${esc(l.targetName||"")}</div><div class="activity-meta">By ${esc(l.performedByName||"—")} · ${esc(l.companyName||"")} · ${fmtDate(l.timestamp)}</div></div></div>`).join(""):'<div class="empty"><div class="big">📊</div><div>No logs found.</div></div>';
+    document.getElementById("logsList").innerHTML=html;
+  }catch(e){document.getElementById("logsList").innerHTML=`<div class="empty">Error: ${e.message}</div>`}
 }
 
 /* UTILS */
-function show(id){["authPage","appView"].forEach(v=>document.getElementById(v).classList.add("hidden"));document.getElementById(id).classList.remove("hidden")}
+function show(id){["loginView","authPage","appView"].forEach(v=>{const el=document.getElementById(v);if(el)el.classList.add("hidden")});document.getElementById(id).classList.remove("hidden")}
 function closeModal(id){document.getElementById(id).classList.add("hidden")}
 let _tt;function toast(msg,kind){const t=document.getElementById("toast");t.textContent=msg;t.className="show"+(kind?" "+kind:"");clearTimeout(_tt);_tt=setTimeout(()=>{t.className=t.className.replace("show","").trim()},3500)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
