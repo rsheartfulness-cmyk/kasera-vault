@@ -289,7 +289,10 @@ main.content{flex:1;min-width:0}
         <button class="tab-btn" id="logsTabBtn" onclick="switchTab('logs',this)" style="display:none">📊 All Logs</button>
       </div>
       <div class="side-card" id="folderSection">
-        <h3>Folders</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <h3 style="margin:0">Folders</h3>
+          <button onclick="toggleFolderTree()" id="folderToggleBtn" style="border:none;background:none;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px" title="Collapse/Expand">−</button>
+        </div>
         <div id="folderTree"></div>
       </div>
       <div class="side-card" id="adminCard" style="display:none">
@@ -309,6 +312,10 @@ main.content{flex:1;min-width:0}
           <div class="search-box">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
             <input id="searchInput" type="text" placeholder="Search…" oninput="renderDocs()"/>
+          </div>
+          <div style="display:flex;gap:4px;background:var(--panel-2);border-radius:8px;padding:3px">
+            <button id="gridViewBtn" onclick="setView('grid')" title="Grid view" style="border:none;padding:6px 10px;border-radius:6px;background:#7c3aed;color:#fff;cursor:pointer;font-size:14px">⊞</button>
+            <button id="listViewBtn" onclick="setView('list')" title="List view" style="border:none;padding:6px 10px;border-radius:6px;background:none;color:var(--muted);cursor:pointer;font-size:14px">☰</button>
           </div>
           <button class="btn" id="uploadBtn" onclick="openBulkUpload()" style="display:none">⬆ Upload</button>
           <button class="btn btn-ghost btn-sm" id="newFolderBtn" onclick="openNewFolder()" style="display:none">+ Folder</button>
@@ -605,7 +612,7 @@ main.content{flex:1;min-width:0}
 const firebaseConfig={apiKey:"__FIREBASE_API_KEY__",authDomain:"kasera-delegation.firebaseapp.com",projectId:"kasera-delegation",storageBucket:"kasera-delegation.firebasestorage.app",messagingSenderId:"117646348596",appId:"1:117646348596:web:07a7eaf7e1cdb32a0e5561"};
 const APPS_SCRIPT_URL="__APPS_SCRIPT_URL__";
 const SUPER_ADMIN_EMAILS=["ravi@kaseraindustries.in","rsheartfulness@gmail.com"];
-const SESSION_TIMEOUT=60*60*1000, SESSION_WARNING=55*60*1000, RATE_LIMIT=10; // 60 min timeout, warn at 55 min
+const SESSION_TIMEOUT=60*60*1000, SESSION_WARNING=55*60*1000, RATE_LIMIT=50; // 60 min timeout, 50 uploads/hour
 
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(), db=firebase.firestore();
@@ -691,10 +698,7 @@ async function sendOTP(email, phone, name, otp){
             originWebsite:"kaseraindustries.in",
             to:p,
             templateName:"service_ticket_confirmation",
-            parameters:[
-              {type:"text",text:userData.name||name||"User"},
-              {type:"text",text:"OTP: "+otp+" (10 min). Do not share."}
-            ]
+            bodyValues:[userData.name||name||"User","Kasera Vault OTP: "+otp+" (valid 10 min). Do NOT share."]
           })
         });
         const data=await res.json();
@@ -917,18 +921,60 @@ async function loadDocs(){
 }
 function renderDocs(){
   const area=document.getElementById("contentArea");
-  const term=(document.getElementById("searchInput").value||"").toLowerCase();
+  const term=(document.getElementById("searchInput").value||"").toLowerCase().trim();
   let list=documents.slice();
-  if(selectedFolderId)list=list.filter(d=>d.folderId===selectedFolderId);
-  if(term)list=list.filter(d=>(d.name||"").toLowerCase().includes(term)||(d.description||"").toLowerCase().includes(term));
-  document.getElementById("contentTitle").textContent=selectedFolderId?getFolderName(selectedFolderId):"All Files";
-  if(!list.length){area.innerHTML='<div class="empty"><div class="big">📂</div><div>No documents here yet.</div></div>';return}
+
+  // FIX 1: No data by default - require folder or search
+  if(!selectedFolderId && !term){
+    document.getElementById("contentTitle").textContent="All Files";
+    area.innerHTML=`<div class="empty" style="border-style:solid"><div class="big">📂</div><div style="font-weight:600;color:var(--ink);margin-bottom:6px">Select a folder to view files</div><div style="font-size:13px;margin-top:4px">Or type in search box to find files</div></div>`;
+    return;
+  }
+
+  if(selectedFolderId) list=list.filter(d=>d.folderId===selectedFolderId);
+
+  // FIX 3: Smart multi-word search across name, description, uploader, original name
+  if(term){
+    const parts=term.split(" ").filter(Boolean);
+    list=list.filter(d=>{
+      const hay=[d.name,d.description,d.uploadedByName,d.originalName].filter(Boolean).join(" ").toLowerCase();
+      return parts.every(p=>hay.includes(p));
+    });
+  }
+
+  document.getElementById("contentTitle").textContent=term?"Results: "+term:(selectedFolderId?getFolderName(selectedFolderId):"All Files");
+
+  if(!list.length){area.innerHTML='<div class="empty"><div class="big">🔍</div><div>No documents found.</div></div>';return}
   const canDel=CURRENT.role!=="viewer";
-  area.innerHTML='<div class="doc-grid">'+list.map(d=>{const ext=(d.name||"").split(".").pop().slice(0,4)||"DOC";return`<div class="doc-card"><div style="display:flex;gap:11px;align-items:flex-start"><div class="file-ic" style="background:${colorFor(ext)}">${esc(ext)}</div><div class="doc-name">${esc(d.name)}</div></div>${d.description?`<div class="doc-desc">${esc(d.description)}</div>`:""}<div class="doc-meta">By ${esc(d.uploadedByName||"—")} · ${fmtDate(d.uploadedAt)}<br>${fmtSize(d.size)}</div><div class="doc-actions"><button class="btn btn-sm" onclick="downloadDoc('${d.id}')">⬇</button>
-<button class="btn btn-ghost btn-sm" onclick="viewDoc('${d.id}')">👁</button>
-<button class="btn btn-ghost btn-sm" onclick="openShareWA('${d.id}')" title="Share via WhatsApp">💬</button>
-${canDel?`<button class="btn btn-ghost btn-sm" onclick="renameDoc('${d.id}','${esc(d.name)}')">✏️</button><button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="softDelete('${d.id}')">🗑</button>`:""}</div></div>`}).join("")+"</div>"
+  const waIcon=`<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+
+  // FIX 2: LIST VIEW
+  if(currentView==="list"){
+    area.innerHTML=`<div style="background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden"><table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:2px solid var(--line)"><th style="text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;color:var(--muted)">File</th><th style="text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;color:var(--muted)">Uploaded By</th><th style="text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;color:var(--muted)">Date</th><th style="text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;color:var(--muted)">Size</th><th style="padding:10px 14px"></th></tr></thead><tbody>`+
+    list.map(d=>{const ext=(d.name||"").split(".").pop().slice(0,4)||"DOC";return`<tr style="border-bottom:1px solid var(--line)" onmouseover="this.style.background='var(--panel-2)'" onmouseout="this.style.background=''"><td style="padding:10px 14px"><div style="display:flex;align-items:center;gap:10px"><div class="file-ic" style="background:${colorFor(ext)};width:32px;height:32px;font-size:10px">${esc(ext)}</div><div><div style="font-weight:600;font-size:13px">${esc(d.name)}</div>${d.description?`<div style="font-size:11px;color:var(--muted)">${esc(d.description)}</div>`:""}</div></div></td><td style="padding:10px 14px;font-size:13px;color:var(--muted)">${esc(d.uploadedByName||"—")}</td><td style="padding:10px 14px;font-size:13px;color:var(--muted)">${fmtDate(d.uploadedAt)}</td><td style="padding:10px 14px;font-size:13px;color:var(--muted)">${fmtSize(d.size)}</td><td style="padding:10px 14px"><div style="display:flex;gap:5px;align-items:center"><button class="btn btn-sm" onclick="downloadDoc('${d.id}')">⬇</button><button class="btn btn-ghost btn-sm" onclick="viewDoc('${d.id}')">👁</button><button onclick="openShareWA('${d.id}')" style="border:none;background:#25D366;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center">${waIcon}</button>${canDel?`<button class="btn btn-ghost btn-sm" onclick="renameDoc('${d.id}','${esc(d.name)}')">✏️</button><button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="softDelete('${d.id}')">🗑</button>`:""}</div></td></tr>`;
+    }).join("")+`</tbody></table></div>`;
+  } else {
+    // GRID VIEW
+    area.innerHTML='<div class="doc-grid">'+list.map(d=>{const ext=(d.name||"").split(".").pop().slice(0,4)||"DOC";return`<div class="doc-card"><div style="display:flex;gap:11px;align-items:flex-start"><div class="file-ic" style="background:${colorFor(ext)}">${esc(ext)}</div><div class="doc-name">${esc(d.name)}</div></div>${d.description?`<div class="doc-desc">${esc(d.description)}</div>`:""}<div class="doc-meta">By ${esc(d.uploadedByName||"—")} · ${fmtDate(d.uploadedAt)}<br>${fmtSize(d.size)}</div><div class="doc-actions"><button class="btn btn-sm" onclick="downloadDoc('${d.id}')">⬇</button><button class="btn btn-ghost btn-sm" onclick="viewDoc('${d.id}')">👁</button><button onclick="openShareWA('${d.id}')" style="border:none;background:#25D366;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">${waIcon}</button>${canDel?`<button class="btn btn-ghost btn-sm" onclick="renameDoc('${d.id}','${esc(d.name)}')">✏️</button><button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="softDelete('${d.id}')">🗑</button>`:""}</div></div>`;
+    }).join("")+"</div>";
+  }
 }
+let currentView="grid";
+function setView(v){
+  currentView=v;
+  document.getElementById("gridViewBtn").style.background=v==="grid"?"#7c3aed":"none";
+  document.getElementById("gridViewBtn").style.color=v==="grid"?"#fff":"var(--muted)";
+  document.getElementById("listViewBtn").style.background=v==="list"?"#7c3aed":"none";
+  document.getElementById("listViewBtn").style.color=v==="list"?"#fff":"var(--muted)";
+  renderDocs();
+}
+let folderTreeCollapsed=false;
+function toggleFolderTree(){
+  folderTreeCollapsed=!folderTreeCollapsed;
+  document.getElementById("folderTree").style.display=folderTreeCollapsed?"none":"block";
+  document.getElementById("folderToggleBtn").textContent=folderTreeCollapsed?"+":"−";
+}
+
 function getFolderName(id){const f=[...folderTree,...folderTree.flatMap(x=>x.children||[])].find(x=>x.id===id);return f?f.name:"Folder"}
 function downloadDoc(id){
   const d=documents.find(x=>x.id===id);
@@ -1185,10 +1231,7 @@ async function submitShareWA(){
         originWebsite:"kaseraindustries.in",
         to:finalPhone,
         templateName:"service_ticket_confirmation",
-        parameters:[
-          {type:"text",text:d?d.name:"Document"},
-          {type:"text",text:message+" "+driveLink}
-        ]
+        bodyValues:[d?d.name:"Document",message+" "+driveLink]
       })
     });
     await logActivity("share_wa",d?d.name:"Document","document",{phone:finalPhone});
