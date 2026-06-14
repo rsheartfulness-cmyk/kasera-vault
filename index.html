@@ -210,7 +210,7 @@ main.content{flex:1;min-width:0}
 
 <!-- AUTH -->
 <div id="authPage" class="hidden">
-  <button class="auth-back" onclick="show('loginView')">← Back</button>
+  <button class="auth-back" onclick="goBackToLanding()">← Back</button>
   <div class="auth-card">
     <div class="brand" style="justify-content:center;margin-bottom:14px">
       <div class="brand-mark">🗄️</div><div class="brand-name">Document Vault</div>
@@ -512,18 +512,49 @@ async function resendOTP(){
 async function sendOTP(email,phone,name,otp){
   const WA_AUTH="U2FsdGVkX19+Xprp9Ky3mOGPLLvw1fdFCV2TD3ZSdDfF9u8csfSGbmhhOVLyovLk15BKUQ6xp0nBaXGcGAUO2m4TuV9895DMVGaZRch5cnJtUZOb4cNhedhk29sGbG9LlckcG/BOD+IV14PEZmoOQ5qXwGPFPxFnIPytrVgJgMn9Wgs+aYrRAMN0Z5Ds224t";
   const WA_URL="https://api.11za.in/apis/template/sendTemplate";
-  try{await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"sendOTP",email,name,otp})})}catch(e){console.warn("Email OTP failed:",e)}
+  let emailSent=false, waSent=false;
+  // 1. Email via Apps Script
+  try{
+    const res=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"sendOTP",email,name,otp})});
+    const data=await res.json();
+    emailSent=data.success===true;
+    console.log("Email OTP result:",data);
+  }catch(e){console.warn("Email OTP failed:",e.message)}
+  // 2. WhatsApp via 11za
   if(phone){
     try{
       let p=phone.replace(/[^0-9]/g,"");
       if(p.length===10)p="91"+p;
-      await fetch(WA_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({authToken:WA_AUTH,originWebsite:"kaseraindustries.in",to:p,templateName:"service_ticket_confirmation",parameters:[{type:"text",text:name||"User"},{type:"text",text:"OTP: "+otp+" (10 min)"}]})});
-    }catch(e){console.warn("WhatsApp OTP failed:",e)}
+      const res=await fetch(WA_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({authToken:WA_AUTH,originWebsite:"kaseraindustries.in",to:p,templateName:"service_ticket_confirmation",parameters:[{type:"text",text:name||"User"},{type:"text",text:"OTP: "+otp+" (10 min)"}]})});
+      const data=await res.json();
+      waSent=true;
+      console.log("WhatsApp OTP result:",data);
+    }catch(e){console.warn("WhatsApp OTP failed:",e.message)}
   }
-  // OTP sent silently via email + WhatsApp only (no alert, no console log)
+  // Show toast where OTP was sent
+  const sent=[];
+  if(emailSent)sent.push("Email");
+  if(waSent)sent.push("WhatsApp");
+  if(sent.length) toast("OTP sent via "+sent.join(" + "),"ok");
+  else toast("OTP ready - check email: "+email,"warn");
 }
 
 function setOtpMsg(t,k){const el=document.getElementById("otpMsg");el.textContent=t||"";el.className="auth-msg"+(k?" "+k:"")}
+
+function goBackToLanding(){
+  // Reset all auth screens
+  document.getElementById("passwordScreen").classList.remove("hidden");
+  document.getElementById("otpScreen").classList.add("hidden");
+  document.getElementById("authMsg").textContent="";
+  document.getElementById("authEmail").value="";
+  document.getElementById("authPass").value="";
+  document.querySelectorAll(".otp-digit").forEach(d=>d.value="");
+  // Clear OTP session
+  sessionStorage.removeItem("vault_otp");
+  sessionStorage.removeItem("vault_otp_time");
+  // Sign out silently then show landing
+  auth.signOut().then(()=>show("loginView")).catch(()=>show("loginView"));
+}
 
 /* SESSION */
 function startSession(){
@@ -600,7 +631,16 @@ async function bootApp(){
   startSession();
   await loadCompanies()
 }
-function logout(){clearTimeout(sessionTimer);clearTimeout(sessionWarningTimer);auth.signOut()}
+function logout(){
+  clearTimeout(sessionTimer);
+  clearTimeout(sessionWarningTimer);
+  // Clear 2FA session flag so OTP is asked again on next login
+  if(auth.currentUser) sessionStorage.removeItem("vault_2fa_verified_"+auth.currentUser.uid);
+  sessionStorage.removeItem("vault_otp");
+  sessionStorage.removeItem("vault_otp_time");
+  CURRENT=null;
+  auth.signOut();
+}
 
 /* COMPANIES */
 async function loadCompanies(){
