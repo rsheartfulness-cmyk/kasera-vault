@@ -57,8 +57,15 @@ aside.side{width:240px;flex-shrink:0}
 .side-card h3{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 10px}
 .tab-btn{border:none;background:none;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;text-align:left;width:100%;transition:background .15s;display:flex;align-items:center;gap:8px}
 .tab-btn:hover{background:var(--panel-2)}.tab-btn.active{background:rgba(124,58,237,.1);color:#7c3aed;font-weight:600}
-.tree-node{border:none;background:none;padding:8px 10px;border-radius:8px;font-size:13px;color:var(--ink);text-align:left;cursor:pointer;width:100%;transition:background .15s}
+.tree-node{border:none;background:none;padding:8px 10px;border-radius:8px;font-size:13px;color:var(--ink);text-align:left;cursor:pointer;transition:background .15s;flex:1}
 .tree-node:hover{background:var(--panel-2)}.tree-node.active{background:rgba(124,58,237,.1);color:#7c3aed;font-weight:600}
+.folder-row{display:flex;align-items:center;border-radius:8px;margin-bottom:2px}
+.folder-row:hover .folder-actions{opacity:1}
+.folder-row.active-row{background:rgba(124,58,237,.05)}
+.folder-actions{opacity:0;display:flex;gap:2px;transition:opacity .15s}
+.folder-btn{border:none;background:none;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--muted)}
+.folder-btn:hover{background:var(--line)}
+.folder-btn.danger:hover{background:rgba(220,43,70,.1);color:var(--danger)}
 
 main.content{flex:1;min-width:0}
 .content-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
@@ -421,6 +428,7 @@ main.content{flex:1;min-width:0}
     <div class="modal-body">
       <div class="field"><label>Full Name</label><input id="newUserName" type="text" placeholder="Employee name"/></div>
       <div class="field"><label>Email</label><input id="newUserEmail" type="email" placeholder="employee@kaseraindustries.in"/></div>
+      <div class="field"><label>Phone <span style="color:var(--muted);font-weight:400">(for WhatsApp OTP + sharing)</span></label><input id="newUserPhone" type="tel" placeholder="91XXXXXXXXXX"/></div>
       <div class="field"><label>Temporary Password</label>
         <div class="pwd-toggle"><input id="newUserPass" type="password" placeholder="Min 6 characters"/><button type="button" class="toggle-btn" onclick="toggleNewPwd()">👁️</button></div>
       </div>
@@ -478,6 +486,35 @@ main.content{flex:1;min-width:0}
   </div>
 </div>
 
+<!-- WHATSAPP SHARE MODAL -->
+<div class="modal-bg hidden" id="shareWAModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-head"><h3>💬 Share via WhatsApp</h3><button class="x-btn" onclick="closeModal('shareWAModal')">×</button></div>
+    <div class="modal-body">
+      <div id="shareDocInfo" style="padding:12px;background:var(--panel-2);border-radius:8px;margin-bottom:16px;font-size:13px;font-weight:600"></div>
+      <div class="field">
+        <label>Select User to Send</label>
+        <select id="shareToUser" onchange="onShareUserChange()">
+          <option value="">Select user…</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Or Enter Phone Number Manually</label>
+        <input type="tel" id="sharePhone" placeholder="91XXXXXXXXXX (with country code)" />
+      </div>
+      <div class="field">
+        <label>Message</label>
+        <textarea id="shareMessage" rows="3" placeholder="Message to send with document link…"></textarea>
+      </div>
+      <div class="auth-msg" id="shareMsg"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('shareWAModal')">Cancel</button>
+      <button class="btn" onclick="submitShareWA()" style="background:#25D366">💬 Send WhatsApp</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -488,7 +525,7 @@ main.content{flex:1;min-width:0}
 const firebaseConfig={apiKey:"__FIREBASE_API_KEY__",authDomain:"kasera-delegation.firebaseapp.com",projectId:"kasera-delegation",storageBucket:"kasera-delegation.firebasestorage.app",messagingSenderId:"117646348596",appId:"1:117646348596:web:07a7eaf7e1cdb32a0e5561"};
 const APPS_SCRIPT_URL="__APPS_SCRIPT_URL__";
 const SUPER_ADMIN_EMAILS=["ravi@kaseraindustries.in","rsheartfulness@gmail.com"];
-const SESSION_TIMEOUT=30*60*1000, SESSION_WARNING=25*60*1000, RATE_LIMIT=10;
+const SESSION_TIMEOUT=60*60*1000, SESSION_WARNING=55*60*1000, RATE_LIMIT=10; // 60 min timeout, warn at 55 min
 
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(), db=firebase.firestore();
@@ -706,15 +743,64 @@ async function loadFolders(){
   renderFolderTree();await loadDocs()
 }
 function renderFolderTree(){
-  document.getElementById("folderTree").innerHTML='<button class="tree-node'+(selectedFolderId===null?" active":"")+ '" onclick="selectFolder(null)">📁 All Files</button>'+folderTree.map(f=>renderNode(f,0)).join("")
+  const canWrite=CURRENT&&(CURRENT.role==="superadmin"||CURRENT.role==="admin");
+  document.getElementById("folderTree").innerHTML=
+    `<div class="folder-item ${selectedFolderId===null?"active":""}">
+       <button class="tree-node${selectedFolderId===null?" active":""}" onclick="selectFolder(null)" style="flex:1">📁 All Files</button>
+     </div>`
+    + folderTree.map(f=>renderNode(f,0,canWrite)).join("");
 }
-function renderNode(f,l){return`<div style="margin-left:${l*14}px"><button class="tree-node${selectedFolderId===f.id?" active":""}" onclick="selectFolder('${f.id}')">${f.children?.length?"📂":"📄"} ${esc(f.name)}</button>${(f.children||[]).map(c=>renderNode(c,l+1)).join("")}</div>`}
+function renderNode(f,l,canWrite){
+  const isActive=selectedFolderId===f.id;
+  const hasChildren=f.children&&f.children.length>0;
+  return `<div style="margin-left:${l*14}px">
+    <div class="folder-row${isActive?" active-row":""}">
+      <button class="tree-node${isActive?" active":""}" onclick="selectFolder('${f.id}')" style="flex:1;text-align:left">
+        ${hasChildren?"📂":"📁"} ${esc(f.name)}
+      </button>
+      ${canWrite?`<div class="folder-actions">
+        <button class="folder-btn" title="New subfolder" onclick="openNewFolder('${f.id}')">+</button>
+        <button class="folder-btn" title="Rename" onclick="renameFolder('${f.id}','${esc(f.name)}')">✏️</button>
+        <button class="folder-btn danger" title="Delete" onclick="deleteFolder('${f.id}','${esc(f.name)}')">🗑</button>
+      </div>`:""}
+    </div>
+    ${(f.children||[]).map(c=>renderNode(c,l+1,canWrite)).join("")}
+  </div>`;
+}
 function selectFolder(id){selectedFolderId=id;renderFolderTree();renderDocs()}
-async function openNewFolder(){
-  const name=prompt("Folder name:");if(!name)return;
-  await db.collection("vault_companies").doc(selectedCompanyId).collection("folders").add({name,parent:selectedFolderId||null,createdAt:Date.now(),createdBy:CURRENT.uid});
-  await logActivity("create_folder",name,"folder",{});
-  toast("Folder created.","ok");await loadFolders()
+async function openNewFolder(parentId){
+  const pid=parentId||selectedFolderId||null;
+  const name=prompt("New folder name:");if(!name||!name.trim())return;
+  try{
+    await db.collection("vault_companies").doc(selectedCompanyId).collection("folders").add({name:name.trim(),parent:pid,createdAt:Date.now(),createdBy:CURRENT.uid});
+    await logActivity("create_folder",name,"folder",{});
+    toast("Folder created!","ok");await loadFolders();
+  }catch(e){toast("Failed: "+e.message,"err")}
+}
+async function renameFolder(folderId,currentName){
+  const newName=prompt("Rename folder:",currentName);
+  if(!newName||newName===currentName)return;
+  try{
+    await db.collection("vault_companies").doc(selectedCompanyId).collection("folders").doc(folderId).update({name:newName.trim(),renamedAt:Date.now(),renamedBy:CURRENT.uid});
+    await logActivity("rename_folder",currentName+" → "+newName,"folder",{});
+    toast("Folder renamed!","ok");await loadFolders();
+  }catch(e){toast("Failed: "+e.message,"err")}
+}
+async function deleteFolder(folderId,name){
+  if(!confirm(`Delete folder "${name}"?
+
+Files inside will NOT be deleted — they will move to root.`))return;
+  try{
+    // Move all docs in this folder to root
+    const docs=await db.collection("vault_companies").doc(selectedCompanyId).collection("documents").where("folderId","==",folderId).get();
+    const batch=db.batch();
+    docs.forEach(d=>batch.update(d.ref,{folderId:null}));
+    await batch.commit();
+    await db.collection("vault_companies").doc(selectedCompanyId).collection("folders").doc(folderId).delete();
+    await logActivity("delete_folder",name,"folder",{});
+    if(selectedFolderId===folderId)selectedFolderId=null;
+    toast("Folder deleted!","ok");await loadFolders();
+  }catch(e){toast("Failed: "+e.message,"err")}
 }
 
 /* DOCUMENTS */
@@ -732,20 +818,39 @@ function renderDocs(){
   document.getElementById("contentTitle").textContent=selectedFolderId?getFolderName(selectedFolderId):"All Files";
   if(!list.length){area.innerHTML='<div class="empty"><div class="big">📂</div><div>No documents here yet.</div></div>';return}
   const canDel=CURRENT.role!=="viewer";
-  area.innerHTML='<div class="doc-grid">'+list.map(d=>{const ext=(d.name||"").split(".").pop().slice(0,4)||"DOC";return`<div class="doc-card"><div style="display:flex;gap:11px;align-items:flex-start"><div class="file-ic" style="background:${colorFor(ext)}">${esc(ext)}</div><div class="doc-name">${esc(d.name)}</div></div>${d.description?`<div class="doc-desc">${esc(d.description)}</div>`:""}<div class="doc-meta">By ${esc(d.uploadedByName||"—")} · ${fmtDate(d.uploadedAt)}<br>${fmtSize(d.size)}</div><div class="doc-actions"><button class="btn btn-sm" onclick="downloadDoc('${d.id}')">⬇</button><button class="btn btn-ghost btn-sm" onclick="viewDoc('${d.id}')">👁</button>${canDel?`<button class="btn btn-ghost btn-sm" onclick="renameDoc('${d.id}','${esc(d.name)}')">✏️</button><button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="softDelete('${d.id}')">🗑</button>`:""}</div></div>`}).join("")+"</div>"
+  area.innerHTML='<div class="doc-grid">'+list.map(d=>{const ext=(d.name||"").split(".").pop().slice(0,4)||"DOC";return`<div class="doc-card"><div style="display:flex;gap:11px;align-items:flex-start"><div class="file-ic" style="background:${colorFor(ext)}">${esc(ext)}</div><div class="doc-name">${esc(d.name)}</div></div>${d.description?`<div class="doc-desc">${esc(d.description)}</div>`:""}<div class="doc-meta">By ${esc(d.uploadedByName||"—")} · ${fmtDate(d.uploadedAt)}<br>${fmtSize(d.size)}</div><div class="doc-actions"><button class="btn btn-sm" onclick="downloadDoc('${d.id}')">⬇</button>
+<button class="btn btn-ghost btn-sm" onclick="viewDoc('${d.id}')">👁</button>
+<button class="btn btn-ghost btn-sm" onclick="openShareWA('${d.id}')" title="Share via WhatsApp">💬</button>
+${canDel?`<button class="btn btn-ghost btn-sm" onclick="renameDoc('${d.id}','${esc(d.name)}')">✏️</button><button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="softDelete('${d.id}')">🗑</button>`:""}</div></div>`}).join("")+"</div>"
 }
 function getFolderName(id){const f=[...folderTree,...folderTree.flatMap(x=>x.children||[])].find(x=>x.id===id);return f?f.name:"Folder"}
 function downloadDoc(id){
   const d=documents.find(x=>x.id===id);
   if(!d)return;
-  // Try direct download first, fallback to viewer
+  // Download via Apps Script proxy (bypasses Drive permission issues)
+  const payload={action:"getDownloadUrl",fileId:d.fileId};
+  // Direct export URL - works if file is shared
   const url="https://drive.google.com/uc?export=download&id="+d.fileId+"&confirm=t";
   window.open(url,"_blank");
+  toast("If download fails - contact admin to check file permissions","warn");
 }
 function viewDoc(id){
   const d=documents.find(x=>x.id===id);
   if(!d)return;
   window.open("https://drive.google.com/file/d/"+d.fileId+"/view","_blank");
+}
+async function fixFileAccess(docId){
+  // Call Apps Script to make file public
+  const d=documents.find(x=>x.id===docId);
+  if(!d)return;
+  try{
+    await fetch(APPS_SCRIPT_URL,{
+      method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({action:"makePublic",fileId:d.fileId})
+    });
+    toast("File access fixed. Try downloading again.","ok");
+  }catch(e){toast("Could not fix access.","err")}
 }
 
 /* BULK UPLOAD */
@@ -885,6 +990,74 @@ async function updateRateLimit(){
 }
 
 /* SOFT DELETE + TRASH */
+let sharingDocId = null;
+
+async function openShareWA(docId){
+  sharingDocId = docId;
+  const d = documents.find(x=>x.id===docId);
+  if(!d) return;
+  // Set doc info
+  document.getElementById("shareDocInfo").textContent = "📄 " + d.name;
+  // Set default message
+  const driveLink = "https://drive.google.com/file/d/"+d.fileId+"/view";
+  document.getElementById("shareMessage").value = "Hi, please find the document shared from Kasera Document Vault:\n\n"+d.name+"\n\n"+driveLink;
+  document.getElementById("sharePhone").value = "";
+  document.getElementById("shareMsg").textContent = "";
+  // Load users into dropdown
+  const qs = await db.collection("vault_users").get();
+  const users = qs.docs.map(d=>({id:d.id,...d.data()})).filter(u=>u.phone);
+  const sel = document.getElementById("shareToUser");
+  sel.innerHTML = '<option value="">Select user…</option>' +
+    users.map(u=>`<option value="${u.phone}">${esc(u.name||u.email)} (${u.phone})</option>`).join("") +
+    '<option value="custom">Enter manually…</option>';
+  document.getElementById("shareWAModal").classList.remove("hidden");
+}
+
+function onShareUserChange(){
+  const val = document.getElementById("shareToUser").value;
+  if(val && val !== "custom"){
+    document.getElementById("sharePhone").value = val;
+  } else if(val === "custom"){
+    document.getElementById("sharePhone").value = "";
+    document.getElementById("sharePhone").focus();
+  }
+}
+
+async function submitShareWA(){
+  const phone = document.getElementById("sharePhone").value.trim().replace(/[^0-9]/g,"");
+  const message = document.getElementById("shareMessage").value.trim();
+  const msgEl = document.getElementById("shareMsg");
+  if(!phone){msgEl.textContent="Enter phone number.";msgEl.className="auth-msg err";return}
+  if(!message){msgEl.textContent="Enter message.";msgEl.className="auth-msg err";return}
+  const WA_AUTH="U2FsdGVkX19+Xprp9Ky3mOGPLLvw1fdFCV2TD3ZSdDfF9u8csfSGbmhhOVLyovLk15BKUQ6xp0nBaXGcGAUO2m4TuV9895DMVGaZRch5cnJtUZOb4cNhedhk29sGbG9LlckcG/BOD+IV14PEZmoOQ5qXwGPFPxFnIPytrVgJgMn9Wgs+aYrRAMN0Z5Ds224t";
+  const WA_URL="https://api.11za.in/apis/template/sendTemplate";
+  const finalPhone = phone.length===10?"91"+phone:phone;
+  try{
+    const d = documents.find(x=>x.id===sharingDocId);
+    const driveLink = d?"https://drive.google.com/file/d/"+d.fileId+"/view":"";
+    await fetch(WA_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        authToken:WA_AUTH,
+        originWebsite:"kaseraindustries.in",
+        to:finalPhone,
+        templateName:"service_ticket_confirmation",
+        parameters:[
+          {type:"text",text:d?d.name:"Document"},
+          {type:"text",text:message+" "+driveLink}
+        ]
+      })
+    });
+    await logActivity("share_wa",d?d.name:"Document","document",{phone:finalPhone});
+    toast("Sent via WhatsApp to "+finalPhone,"ok");
+    closeModal("shareWAModal");
+  }catch(e){
+    msgEl.textContent="Failed: "+e.message;
+    msgEl.className="auth-msg err";
+  }
+}
+
 async function renameDoc(docId, currentName){
   const newName=prompt("Rename file:",currentName);
   if(!newName||newName===currentName)return;
@@ -1004,7 +1177,8 @@ async function submitAddUser(){
   const btn=document.getElementById("addUserBtn");btn.disabled=true;const old=btn.innerHTML;btn.innerHTML='<span class="loader"></span>';
   try{
     const cred=await secondaryAuth.createUserWithEmailAndPassword(email,pass);
-    await db.collection("vault_users").doc(cred.user.uid).set({email,name,role,canAddUsers,companies:selectedCompanies,createdAt:Date.now(),createdBy:CURRENT.uid});
+    const phone=document.getElementById("newUserPhone").value.trim().replace(/[^0-9]/g,"");
+    await db.collection("vault_users").doc(cred.user.uid).set({email,name,role,canAddUsers,phone:phone||"",companies:selectedCompanies,createdAt:Date.now(),createdBy:CURRENT.uid});
     await secondaryAuth.signOut();
     await logActivity("add_user",name,"user",{email,role});
     closeModal("addUserModal");toast(`User "${name}" created!`,"ok");await loadUsers()
