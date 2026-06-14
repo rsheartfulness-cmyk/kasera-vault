@@ -353,17 +353,54 @@ main.content{flex:1;min-width:0}
     <div class="modal-body">
       <div id="rateLimitBadge" class="rate-badge rate-ok">✓ 10/10 uploads remaining this hour</div>
       <div class="field"><label>Folder</label><div id="folderPathDisplay" style="padding:9px 12px;background:var(--panel-2);border-radius:8px;font-size:13px;color:var(--muted)">Root</div></div>
+
+      <!-- NAMING CULTURE -->
+      <div style="background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.2);border-radius:10px;padding:14px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📝 File Naming</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="field" style="margin:0">
+            <label>Category</label>
+            <select id="upCategory" onchange="updatePreviewName()">
+              <option value="">Select category…</option>
+              <option>Invoice</option>
+              <option>Contract</option>
+              <option>Agreement</option>
+              <option>Report</option>
+              <option>Certificate</option>
+              <option>Purchase Order</option>
+              <option>Quotation</option>
+              <option>Receipt</option>
+              <option>Legal</option>
+              <option>HR</option>
+              <option>Finance</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0">
+            <label>Date</label>
+            <input type="date" id="upDate" onchange="updatePreviewName()" />
+          </div>
+        </div>
+        <div class="field" style="margin-top:10px;margin-bottom:0">
+          <label>Description <span style="color:var(--muted);font-weight:400">(short, no spaces)</span></label>
+          <input type="text" id="upDescription" placeholder="e.g. GST-Payment, Vendor-ABC, Q1-Report" oninput="updatePreviewName()" />
+        </div>
+        <div id="namePreview" style="margin-top:10px;padding:8px 12px;background:#fff;border-radius:8px;font-size:12px;color:#7c3aed;font-weight:600;font-family:monospace;display:none">
+          Preview: <span id="namePreviewText"></span>
+        </div>
+      </div>
+
       <div class="field">
         <label>Files <span style="color:var(--muted);font-weight:400">(select multiple · max 25 MB each)</span></label>
         <div class="bulk-zone" id="bulkZone" onclick="document.getElementById('bulkFileInput').click()">
           <div style="font-size:28px;margin-bottom:8px">📁</div>
           <div style="font-weight:600;font-size:14px">Click or drag files here</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px">You can select multiple files at once</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Files will be renamed automatically</div>
         </div>
         <input id="bulkFileInput" type="file" multiple style="display:none" onchange="onBulkFilePick()"/>
       </div>
       <div id="bulkFileList" class="bulk-file-list" style="display:none"></div>
-      <div class="field"><label>Description <span style="color:var(--muted);font-weight:400">(applies to all files)</span></label><textarea id="upDesc" placeholder="Optional note…"></textarea></div>
+      <div class="field"><label>Notes <span style="color:var(--muted);font-weight:400">(optional)</span></label><textarea id="upDesc" placeholder="Any additional notes…"></textarea></div>
       <div id="bulkProgress" class="bulk-progress" style="display:none">
         <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:4px"><span>Uploading…</span><span id="bulkProgressText">0/0</span></div>
         <div class="progress-bar"><div class="progress-fill" id="bulkProgressFill" style="width:0%"></div></div>
@@ -695,13 +732,50 @@ function renderDocs(){
   document.getElementById("contentTitle").textContent=selectedFolderId?getFolderName(selectedFolderId):"All Files";
   if(!list.length){area.innerHTML='<div class="empty"><div class="big">📂</div><div>No documents here yet.</div></div>';return}
   const canDel=CURRENT.role!=="viewer";
-  area.innerHTML='<div class="doc-grid">'+list.map(d=>{const ext=(d.name||"").split(".").pop().slice(0,4)||"DOC";return`<div class="doc-card"><div style="display:flex;gap:11px;align-items:flex-start"><div class="file-ic" style="background:${colorFor(ext)}">${esc(ext)}</div><div class="doc-name">${esc(d.name)}</div></div>${d.description?`<div class="doc-desc">${esc(d.description)}</div>`:""}<div class="doc-meta">By ${esc(d.uploadedByName||"—")} · ${fmtDate(d.uploadedAt)}<br>${fmtSize(d.size)}</div><div class="doc-actions"><button class="btn btn-sm" onclick="downloadDoc('${d.id}')">⬇ Download</button>${canDel?`<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="softDelete('${d.id}')">🗑</button>`:""}</div></div>`}).join("")+"</div>"
+  area.innerHTML='<div class="doc-grid">'+list.map(d=>{const ext=(d.name||"").split(".").pop().slice(0,4)||"DOC";return`<div class="doc-card"><div style="display:flex;gap:11px;align-items:flex-start"><div class="file-ic" style="background:${colorFor(ext)}">${esc(ext)}</div><div class="doc-name">${esc(d.name)}</div></div>${d.description?`<div class="doc-desc">${esc(d.description)}</div>`:""}<div class="doc-meta">By ${esc(d.uploadedByName||"—")} · ${fmtDate(d.uploadedAt)}<br>${fmtSize(d.size)}</div><div class="doc-actions"><button class="btn btn-sm" onclick="downloadDoc('${d.id}')">⬇</button><button class="btn btn-ghost btn-sm" onclick="viewDoc('${d.id}')">👁</button>${canDel?`<button class="btn btn-ghost btn-sm" onclick="renameDoc('${d.id}','${esc(d.name)}')">✏️</button><button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="softDelete('${d.id}')">🗑</button>`:""}</div></div>`}).join("")+"</div>"
 }
 function getFolderName(id){const f=[...folderTree,...folderTree.flatMap(x=>x.children||[])].find(x=>x.id===id);return f?f.name:"Folder"}
-function downloadDoc(id){const d=documents.find(x=>x.id===id);if(d)window.open("https://drive.google.com/uc?export=download&id="+d.fileId,"_blank")}
+function downloadDoc(id){
+  const d=documents.find(x=>x.id===id);
+  if(!d)return;
+  // Try direct download first, fallback to viewer
+  const url="https://drive.google.com/uc?export=download&id="+d.fileId+"&confirm=t";
+  window.open(url,"_blank");
+}
+function viewDoc(id){
+  const d=documents.find(x=>x.id===id);
+  if(!d)return;
+  window.open("https://drive.google.com/file/d/"+d.fileId+"/view","_blank");
+}
 
 /* BULK UPLOAD */
 let bulkFilePicked=[];
+function buildFileName(originalName, companyName, category, date, description){
+  // Format: CompanyName_Category_Date_Description.ext
+  const ext = originalName.split(".").pop().toLowerCase();
+  const company = (companyName||"Kasera").replace(/[^a-zA-Z0-9]/g,"");
+  const cat = (category||"Document").replace(/[^a-zA-Z0-9]/g,"");
+  const d = date || new Date().toISOString().split("T")[0];
+  const desc = (description||"").replace(/[^a-zA-Z0-9\-]/g,"").replace(/\s+/g,"-") || originalName.replace("."+ext,"").replace(/[^a-zA-Z0-9\-]/g,"-").slice(0,30);
+  return `${company}_${cat}_${d}_${desc}.${ext}`;
+}
+
+function updatePreviewName(){
+  const category = document.getElementById("upCategory").value;
+  const date = document.getElementById("upDate").value;
+  const desc = document.getElementById("upDescription").value;
+  const company = companies.find(c=>c.id===selectedCompanyId);
+  const preview = document.getElementById("namePreview");
+  const previewText = document.getElementById("namePreviewText");
+  if(category || date || desc){
+    const sample = buildFileName("document.pdf", company?.name||"Kasera", category, date, desc);
+    previewText.textContent = sample;
+    preview.style.display = "block";
+  } else {
+    preview.style.display = "none";
+  }
+}
+
 async function openBulkUpload(){
   const remaining=await checkRateLimit();
   const badge=document.getElementById("rateLimitBadge");
@@ -709,6 +783,11 @@ async function openBulkUpload(){
   badge.className="rate-badge "+(remaining>5?"rate-ok":remaining>2?"rate-warn":"rate-full");
   if(!remaining){toast("Rate limit reached. Try in an hour.","err");return}
   bulkFilePicked=[];
+  // Set today as default date
+  document.getElementById("upDate").value=new Date().toISOString().split("T")[0];
+  document.getElementById("upCategory").value="";
+  document.getElementById("upDescription").value="";
+  document.getElementById("namePreview").style.display="none";
   document.getElementById("bulkZone").className="bulk-zone";
   document.getElementById("bulkFileList").style.display="none";
   document.getElementById("bulkFileList").innerHTML="";
@@ -727,7 +806,14 @@ function onBulkFilePick(){
   document.getElementById("bulkZone").className="bulk-zone has-files";
   const listEl=document.getElementById("bulkFileList");
   listEl.style.display="flex";
-  listEl.innerHTML=files.map((f,i)=>`<div class="bulk-file-item"><span class="bulk-file-name">${esc(f.name)}</span><span class="bulk-file-size">${fmtSize(f.size)}</span><button onclick="removeBulkFile(${i})" style="border:none;background:none;color:var(--danger);cursor:pointer;font-size:16px;padding:0 4px">×</button></div>`).join("")
+  const company = companies.find(c=>c.id===selectedCompanyId);
+  const category = document.getElementById("upCategory").value;
+  const date = document.getElementById("upDate").value;
+  const desc = document.getElementById("upDescription").value;
+  listEl.innerHTML=files.map((f,i)=>{
+    const newName = (category||date||desc) ? buildFileName(f.name,company?.name,category,date,desc) : f.name;
+    return `<div class="bulk-file-item"><div style="flex:1;min-width:0"><span class="bulk-file-name">${esc(f.name)}</span>${newName!==f.name?`<div style="font-size:10px;color:#7c3aed;margin-top:2px">→ ${esc(newName)}</div>`:""}</div><span class="bulk-file-size">${fmtSize(f.size)}</span><button onclick="removeBulkFile(${i})" style="border:none;background:none;color:var(--danger);cursor:pointer;font-size:16px;padding:0 4px">×</button></div>`;
+  }).join("")
 }
 function removeBulkFile(idx){
   bulkFilePicked.splice(idx,1);
@@ -762,11 +848,15 @@ async function submitBulkUpload(){
     progressStatus.textContent=`Uploading: ${file.name}`;
     fill.style.width=`${((i)/bulkFilePicked.length)*100}%`;
     try{
+      const category=document.getElementById("upCategory").value;
+      const date=document.getElementById("upDate").value;
+      const descField=document.getElementById("upDescription").value;
+      const finalName=(category||date||descField)?buildFileName(file.name,company.name,category,date,descField):file.name;
       const b64=await f2b64(file);
-      const r=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"upload",companyName:company.name,fileName:file.name,mimeType:file.type||"application/octet-stream",fileData:b64})});
+      const r=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"upload",companyName:company.name,fileName:finalName,mimeType:file.type||"application/octet-stream",fileData:b64})});
       const res=await r.json();
       if(!res.success)throw new Error(res.error||"Upload failed");
-      await db.collection("vault_companies").doc(selectedCompanyId).collection("documents").add({name:file.name,folderId:selectedFolderId||null,description:desc,fileId:res.fileId,mimeType:file.type||"application/octet-stream",size:res.size||file.size,uploadedBy:CURRENT.uid,uploadedByName:CURRENT.name||CURRENT.email,uploadedAt:Date.now()});
+      await db.collection("vault_companies").doc(selectedCompanyId).collection("documents").add({name:finalName,originalName:file.name,folderId:selectedFolderId||null,description:desc,fileId:res.fileId,mimeType:file.type||"application/octet-stream",size:res.size||file.size,uploadedBy:CURRENT.uid,uploadedByName:CURRENT.name||CURRENT.email,uploadedAt:Date.now()});
       await logActivity("upload",file.name,"document",{size:file.size});
       await updateRateLimit();
       done++
@@ -795,6 +885,17 @@ async function updateRateLimit(){
 }
 
 /* SOFT DELETE + TRASH */
+async function renameDoc(docId, currentName){
+  const newName=prompt("Rename file:",currentName);
+  if(!newName||newName===currentName)return;
+  try{
+    await db.collection("vault_companies").doc(selectedCompanyId).collection("documents").doc(docId).update({name:newName,renamedAt:Date.now(),renamedBy:CURRENT.name});
+    await logActivity("rename",currentName+" → "+newName,"document",{});
+    toast("Renamed to: "+newName,"ok");
+    await loadDocs();
+  }catch(e){toast("Rename failed: "+e.message,"err")}
+}
+
 async function softDelete(docId){
   const d=documents.find(x=>x.id===docId);if(!d)return;
   if(!confirm(`Move "${d.name}" to trash?`))return;
