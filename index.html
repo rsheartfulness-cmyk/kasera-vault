@@ -515,10 +515,15 @@ async function sendOTP(email,phone,name,otp){
   let emailSent=false, waSent=false;
   // 1. Email via Apps Script
   try{
-    const res=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"sendOTP",email,name,otp})});
-    const data=await res.json();
-    emailSent=data.success===true;
-    console.log("Email OTP result:",data);
+    // Use no-cors to avoid CORS block - Apps Script handles response
+    await fetch(APPS_SCRIPT_URL,{
+      method:"POST",
+      mode:"no-cors",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({action:"sendOTP",email,name,otp})
+    });
+    emailSent=true; // With no-cors we can't read response, assume sent
+    console.log("Email OTP sent to:",email);
   }catch(e){console.warn("Email OTP failed:",e.message)}
   // 2. WhatsApp via 11za
   if(phone){
