@@ -186,7 +186,7 @@ main.content{flex:1;min-width:0}
   <div class="lp">
     <div class="lp-bar">🔒 Enterprise-grade security · Activity Logs · Trash Recovery · 2FA Protection</div>
     <nav class="lp-nav">
-      <div class="brand"><div class="brand-mark">🗄️</div><div class="brand-name">Document Vault</div></div>
+      <div class="brand"><div class="brand-mark">🗂️</div><div class="brand-name">Document Vault</div></div>
       <div class="spacer"></div>
       <button class="btn btn-violet btn-sm" onclick="show('authPage')">Sign in →</button>
     </nav>
@@ -220,7 +220,7 @@ main.content{flex:1;min-width:0}
   <button class="auth-back" onclick="goBackToLanding()">← Back</button>
   <div class="auth-card">
     <div class="brand" style="justify-content:center;margin-bottom:14px">
-      <div class="brand-mark">🗄️</div><div class="brand-name">Document Vault</div>
+      <div class="brand-mark">🗂️</div><div class="brand-name">Document Vault</div>
     </div>
     <div id="passwordScreen">
       <h1 style="text-align:center;font-size:21px;margin:0 0 4px">Welcome back</h1>
@@ -264,12 +264,16 @@ main.content{flex:1;min-width:0}
 <!-- APP -->
 <div id="appView" class="hidden">
   <header class="topbar">
-    <div class="brand"><div class="brand-mark" style="width:30px;height:30px;font-size:14px">🗄️</div><div class="brand-name">Document Vault</div></div>
-    <div class="company-chip" onclick="openCompanySelector()">📁 <span id="selectedCompanyName">—</span> ▾</div>
+    <div class="brand"><div class="brand-mark" style="width:30px;height:30px;font-size:14px">🗂️</div><div class="brand-name">Document Vault</div></div>
+    <div class="company-chip" onclick="openCompanySelector()">
+      <div id="selectedCompanyLogo" style="width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:grid;place-items:center;color:#fff;font-weight:700;font-size:11px">K</div>
+      <span id="selectedCompanyName">—</span> ▾
+    </div>
     <div class="spacer"></div>
     <div style="display:flex;align-items:center;gap:10px">
       <div style="text-align:right"><div style="font-size:13px;font-weight:600" id="uName">—</div><div style="font-size:11px;color:var(--muted);text-transform:capitalize" id="uRole">—</div></div>
       <div class="avatar" id="uAvatar">?</div>
+      <button class="btn btn-ghost btn-sm" onclick="openProfile()" title="My Profile">👤</button>
       <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
     </div>
   </header>
@@ -347,9 +351,41 @@ main.content{flex:1;min-width:0}
 
 <!-- COMPANY SELECTOR -->
 <div class="modal-bg hidden" id="companySelectorModal">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-head"><h3>Select Company</h3></div>
+  <div class="modal" style="max-width:500px">
+    <div class="modal-head"><h3>Select Company</h3><button class="x-btn" onclick="closeModal('companySelectorModal')">×</button></div>
     <div class="modal-body"><div id="companySelectorList"></div></div>
+  </div>
+</div>
+
+<!-- ADD COMPANY MODAL -->
+<div class="modal-bg hidden" id="addCompanyModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-head"><h3>🏢 Add New Company</h3><button class="x-btn" onclick="closeModal('addCompanyModal')">×</button></div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field" style="margin:0"><label>Company Name *</label><input id="cmpName" type="text" placeholder="Kasera Industries"/></div>
+        <div class="field" style="margin:0"><label>Short Code *</label><input id="cmpCode" type="text" placeholder="KASERA" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')"/></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div class="field" style="margin:0"><label>GST Number</label><input id="cmpGST" type="text" placeholder="22AAAAA0000A1Z5"/></div>
+        <div class="field" style="margin:0"><label>PAN Number</label><input id="cmpPAN" type="text" placeholder="AAAAA0000A"/></div>
+      </div>
+      <div class="field" style="margin-top:12px"><label>Address</label><textarea id="cmpAddress" placeholder="Full company address…" style="min-height:60px"></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field" style="margin:0"><label>Phone</label><input id="cmpPhone" type="tel" placeholder="+91 9999999999"/></div>
+        <div class="field" style="margin:0"><label>Email</label><input id="cmpEmail" type="email" placeholder="info@company.com"/></div>
+      </div>
+      <div class="field" style="margin-top:12px"><label>Website</label><input id="cmpWebsite" type="text" placeholder="https://company.com"/></div>
+      <div class="field"><label>Company Logo URL <span style="color:var(--muted);font-weight:400">(paste image link)</span></label>
+        <input id="cmpLogo" type="text" placeholder="https://..." oninput="previewLogo(this.value)"/>
+        <div id="logoPreview" style="margin-top:8px;display:none"><img id="logoImg" style="height:48px;border-radius:8px;border:1px solid var(--line)" /></div>
+      </div>
+      <div class="auth-msg" id="addCompanyMsg"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('addCompanyModal')">Cancel</button>
+      <button class="btn btn-violet" onclick="submitAddCompany()">Create Company</button>
+    </div>
   </div>
 </div>
 
@@ -428,7 +464,18 @@ main.content{flex:1;min-width:0}
     <div class="modal-body">
       <div class="field"><label>Full Name</label><input id="newUserName" type="text" placeholder="Employee name"/></div>
       <div class="field"><label>Email</label><input id="newUserEmail" type="email" placeholder="employee@kaseraindustries.in"/></div>
-      <div class="field"><label>Phone <span style="color:var(--muted);font-weight:400">(for WhatsApp OTP + sharing)</span></label><input id="newUserPhone" type="tel" placeholder="91XXXXXXXXXX"/></div>
+      <div class="field">
+        <label>WhatsApp Number <span style="color:var(--muted);font-weight:400">(for OTP + sharing)</span></label>
+        <div style="display:flex;gap:8px">
+          <select id="phoneCountry" style="width:90px;padding:10px 8px;border:1px solid var(--line);border-radius:10px;background:#fbfcfe">
+            <option value="91">🇮🇳 +91</option>
+            <option value="1">🇺🇸 +1</option>
+            <option value="44">🇬🇧 +44</option>
+            <option value="971">🇦🇪 +971</option>
+          </select>
+          <input id="newUserPhone" type="tel" placeholder="9999999999" style="flex:1;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#fbfcfe"/>
+        </div>
+      </div>
       <div class="field"><label>Temporary Password</label>
         <div class="pwd-toggle"><input id="newUserPass" type="password" placeholder="Min 6 characters"/><button type="button" class="toggle-btn" onclick="toggleNewPwd()">👁️</button></div>
       </div>
@@ -482,6 +529,39 @@ main.content{flex:1;min-width:0}
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="closeModal('editUserModal')">Cancel</button>
       <button class="btn btn-violet" onclick="submitEditUser()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE MODAL -->
+<div class="modal-bg hidden" id="profileModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-head"><h3>👤 My Profile</h3><button class="x-btn" onclick="closeModal('profileModal')">×</button></div>
+    <div class="modal-body">
+      <div style="text-align:center;margin-bottom:20px">
+        <div class="avatar" style="width:56px;height:56px;font-size:22px;margin:0 auto 10px" id="profileAvatar">?</div>
+        <div style="font-weight:600;font-size:16px" id="profileName">—</div>
+        <div style="font-size:12px;color:var(--muted)" id="profileEmail">—</div>
+        <span class="role-badge" id="profileRole" style="margin-top:6px;display:inline-block">—</span>
+      </div>
+      <div class="field">
+        <label>WhatsApp Number <span style="color:var(--muted);font-weight:400">(for OTP + document sharing)</span></label>
+        <div style="display:flex;gap:8px">
+          <select id="profilePhoneCountry" style="width:90px;padding:10px 8px;border:1px solid var(--line);border-radius:10px;background:#fbfcfe">
+            <option value="91">🇮🇳 +91</option>
+            <option value="1">🇺🇸 +1</option>
+            <option value="44">🇬🇧 +44</option>
+            <option value="971">🇦🇪 +971</option>
+          </select>
+          <input id="profilePhone" type="tel" placeholder="9999999999" style="flex:1;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#fbfcfe"/>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Required for WhatsApp OTP on login</div>
+      </div>
+      <div class="auth-msg" id="profileMsg"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('profileModal')">Cancel</button>
+      <button class="btn btn-violet" onclick="saveProfile()">Save</button>
     </div>
   </div>
 </div>
@@ -579,43 +659,57 @@ async function resendOTP(){
   const otp=Math.floor(100000+Math.random()*900000).toString();
   sessionStorage.setItem("vault_otp",otp);
   sessionStorage.setItem("vault_otp_time",Date.now().toString());
-  if(CURRENT) await sendOTP(CURRENT.email,CURRENT.phone||"",CURRENT.name||CURRENT.email,otp);
+  if(CURRENT) await sendOTP(CURRENT.email,"",CURRENT.name||CURRENT.email,otp);
   toast("Code resent via Email + WhatsApp.","ok")
 }
 
-async function sendOTP(email,phone,name,otp){
+async function sendOTP(email, phone, name, otp){
   const WA_AUTH="U2FsdGVkX19+Xprp9Ky3mOGPLLvw1fdFCV2TD3ZSdDfF9u8csfSGbmhhOVLyovLk15BKUQ6xp0nBaXGcGAUO2m4TuV9895DMVGaZRch5cnJtUZOb4cNhedhk29sGbG9LlckcG/BOD+IV14PEZmoOQ5qXwGPFPxFnIPytrVgJgMn9Wgs+aYrRAMN0Z5Ds224t";
   const WA_URL="https://api.11za.in/apis/template/sendTemplate";
   let emailSent=false, waSent=false;
+
   // 1. Email via Apps Script
   try{
-    // Use no-cors to avoid CORS block - Apps Script handles response
-    await fetch(APPS_SCRIPT_URL,{
-      method:"POST",
-      mode:"no-cors",
-      headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body:JSON.stringify({action:"sendOTP",email,name,otp})
-    });
-    emailSent=true; // With no-cors we can't read response, assume sent
-    console.log("Email OTP sent to:",email);
+    await fetch(APPS_SCRIPT_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"sendOTP",email,name,otp})});
+    emailSent=true;
   }catch(e){console.warn("Email OTP failed:",e.message)}
-  // 2. WhatsApp via 11za
-  if(phone){
-    try{
-      let p=phone.replace(/[^0-9]/g,"");
-      if(p.length===10)p="91"+p;
-      const res=await fetch(WA_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({authToken:WA_AUTH,originWebsite:"kaseraindustries.in",to:p,templateName:"service_ticket_confirmation",parameters:[{type:"text",text:name||"User"},{type:"text",text:"OTP: "+otp+" (10 min)"}]})});
-      const data=await res.json();
-      waSent=true;
-      console.log("WhatsApp OTP result:",data);
-    }catch(e){console.warn("WhatsApp OTP failed:",e.message)}
-  }
-  // Show toast where OTP was sent
+
+  // 2. WhatsApp - SINGLE SOURCE: always read from vault_users Firestore
+  try{
+    const uid = auth.currentUser?.uid;
+    if(uid){
+      const userSnap = await db.collection("vault_users").doc(uid).get();
+      const userData = userSnap.data()||{};
+      const waPhone = (userData.phone||"").replace(/[^0-9]/g,"");
+      if(waPhone){
+        const p = waPhone.length===10?"91"+waPhone:waPhone;
+        const res=await fetch(WA_URL,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            authToken:WA_AUTH,
+            originWebsite:"kaseraindustries.in",
+            to:p,
+            templateName:"service_ticket_confirmation",
+            parameters:[
+              {type:"text",text:userData.name||name||"User"},
+              {type:"text",text:"OTP: "+otp+" (10 min). Do not share."}
+            ]
+          })
+        });
+        const data=await res.json();
+        waSent=!!data;
+        console.log("WhatsApp OTP sent to:",p,"| Result:",data);
+      } else {
+        console.log("No phone in vault_users for uid:",uid);
+      }
+    }
+  }catch(e){console.warn("WhatsApp OTP failed:",e.message)}
+
   const sent=[];
   if(emailSent)sent.push("Email");
   if(waSent)sent.push("WhatsApp");
-  if(sent.length) toast("OTP sent via "+sent.join(" + "),"ok");
-  else toast("OTP ready - check email: "+email,"warn");
+  toast("OTP sent via "+(sent.length?sent.join(" + "):"email"),"ok");
 }
 
 function setOtpMsg(t,k){const el=document.getElementById("otpMsg");el.textContent=t||"";el.className="auth-msg"+(k?" "+k:"")}
@@ -677,7 +771,7 @@ auth.onAuthStateChanged(async(user)=>{
       document.getElementById("passwordScreen").classList.add("hidden");
       document.getElementById("otpScreen").classList.remove("hidden");
       // Send OTP via Email + WhatsApp
-      await sendOTP(CURRENT.email, CURRENT.phone||"", CURRENT.name||CURRENT.email, otp);
+      await sendOTP(CURRENT.email, "", CURRENT.name||CURRENT.email, otp);
       return;
     }
     await bootApp();
@@ -729,23 +823,35 @@ async function loadCompanies(){
   if(!companies.length){document.getElementById("contentArea").innerHTML='<div class="empty"><div class="big">🏢</div><div>No company assigned yet.<br><small>Ask your admin to add you.</small></div></div>';return}
   selectedCompanyId=companies[0].id;
   document.getElementById("selectedCompanyName").textContent=companies[0].name;
-  document.getElementById("companySelectorList").innerHTML=companies.map(c=>`<div style="padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer" onmouseover="this.style.background='var(--panel-2)'" onmouseout="this.style.background=''" onclick="selectCompany('${c.id}')">${esc(c.name)}</div>`).join("");
+    document.getElementById("companySelectorList").innerHTML=companies.map(c=>`
+    <div style="padding:14px;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:12px" onmouseover="this.style.background='var(--panel-2)'" onmouseout="this.style.background=''" onclick="selectCompany('${c.id}')">
+      ${c.logo?`<img src="${c.logo}" style="width:40px;height:40px;border-radius:8px;object-fit:contain;border:1px solid var(--line)" onerror="this.style.display='none'">`:`<div style="width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px">${(c.name||"?")[0]}</div>`}
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:14px">${esc(c.name)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${[c.code,c.gst?"GST: "+c.gst:""].filter(Boolean).join(" · ")}</div>
+      </div>
+      ${selectedCompanyId===c.id?'<span style="color:#7c3aed;font-size:18px">✓</span>':""}
+    </div>`).join("")+
+    (CURRENT&&CURRENT.role==='superadmin'?`<button class="btn btn-ghost btn-sm" style="width:100%;margin-top:4px" onclick="closeModal('companySelectorModal');openAddCompany()">+ Add New Company</button>`:"");
   await loadFolders()
 }
 function openCompanySelector(){if(companies.length>1)document.getElementById("companySelectorModal").classList.remove("hidden")}
-async function selectCompany(id){selectedCompanyId=id;selectedFolderId=null;closeModal("companySelectorModal");const c=companies.find(x=>x.id===id);if(c)document.getElementById("selectedCompanyName").textContent=c.name;await loadFolders()}
-
-/* FOLDERS */
-async function loadFolders(){
-  const qs=await db.collection("vault_companies").doc(selectedCompanyId).collection("folders").get();
-  const all=qs.docs.map(d=>({id:d.id,...d.data()}));
-  folderTree=all.filter(f=>!f.parent).map(f=>({...f,children:all.filter(c=>c.parent===f.id)}));
-  renderFolderTree();await loadDocs()
+async function selectCompany(id){
+  selectedCompanyId=id;selectedFolderId=null;
+  closeModal("companySelectorModal");
+  const c=companies.find(x=>x.id===id);
+  if(c){
+    document.getElementById("selectedCompanyName").textContent=c.name;
+    const logoEl=document.getElementById("selectedCompanyLogo");
+    if(c.logo){logoEl.innerHTML=`<img src="${c.logo}" style="width:24px;height:24px;border-radius:6px;object-fit:contain">`;}
+    else{logoEl.textContent=(c.name||"?")[0].toUpperCase();}
+  }
+  await loadFolders();
 }
 function renderFolderTree(){
   const canWrite=CURRENT&&(CURRENT.role==="superadmin"||CURRENT.role==="admin");
   document.getElementById("folderTree").innerHTML=
-    `<div class="folder-item ${selectedFolderId===null?"active":""}">
+    `<div class="folder-row${selectedFolderId===null?" active-row":""}">
        <button class="tree-node${selectedFolderId===null?" active":""}" onclick="selectFolder(null)" style="flex:1">📁 All Files</button>
      </div>`
     + folderTree.map(f=>renderNode(f,0,canWrite)).join("");
@@ -990,6 +1096,42 @@ async function updateRateLimit(){
 }
 
 /* SOFT DELETE + TRASH */
+function openProfile(){
+  if(!CURRENT)return;
+  document.getElementById("profileAvatar").textContent=(CURRENT.name||CURRENT.email||"?")[0].toUpperCase();
+  document.getElementById("profileName").textContent=CURRENT.name||"—";
+  document.getElementById("profileEmail").textContent=CURRENT.email||"—";
+  document.getElementById("profileRole").textContent=CURRENT.role||"—";
+  document.getElementById("profileRole").className="role-badge role-"+(CURRENT.role||"viewer");
+  // Parse existing phone
+  const phone=CURRENT.phone||"";
+  if(phone.startsWith("91")&&phone.length===12){
+    document.getElementById("profilePhoneCountry").value="91";
+    document.getElementById("profilePhone").value=phone.slice(2);
+  } else {
+    document.getElementById("profilePhone").value=phone;
+  }
+  document.getElementById("profileMsg").textContent="";
+  document.getElementById("profileModal").classList.remove("hidden");
+}
+
+async function saveProfile(){
+  const raw=document.getElementById("profilePhone").value.trim().replace(/[^0-9]/g,"");
+  const cc=document.getElementById("profilePhoneCountry").value||"91";
+  const phone=raw?(cc+raw):"";
+  try{
+    await db.collection("vault_users").doc(CURRENT.uid).update({phone,updatedAt:Date.now()});
+    CURRENT.phone=phone;
+    document.getElementById("profileMsg").textContent="Saved!";
+    document.getElementById("profileMsg").className="auth-msg ok";
+    setTimeout(()=>closeModal("profileModal"),1200);
+    toast("Profile updated. WhatsApp OTP enabled.","ok");
+  }catch(e){
+    document.getElementById("profileMsg").textContent="Failed: "+e.message;
+    document.getElementById("profileMsg").className="auth-msg err";
+  }
+}
+
 let sharingDocId = null;
 
 async function openShareWA(docId){
@@ -1177,8 +1319,10 @@ async function submitAddUser(){
   const btn=document.getElementById("addUserBtn");btn.disabled=true;const old=btn.innerHTML;btn.innerHTML='<span class="loader"></span>';
   try{
     const cred=await secondaryAuth.createUserWithEmailAndPassword(email,pass);
-    const phone=document.getElementById("newUserPhone").value.trim().replace(/[^0-9]/g,"");
-    await db.collection("vault_users").doc(cred.user.uid).set({email,name,role,canAddUsers,phone:phone||"",companies:selectedCompanies,createdAt:Date.now(),createdBy:CURRENT.uid});
+    const phoneRaw=document.getElementById("newUserPhone").value.trim().replace(/[^0-9]/g,"");
+    const countryCode=document.getElementById("phoneCountry")?.value||"91";
+    const phone=phoneRaw?(countryCode+phoneRaw):"";
+    await db.collection("vault_users").doc(cred.user.uid).set({email,name,role,canAddUsers,phone,companies:selectedCompanies,createdAt:Date.now(),createdBy:CURRENT.uid});
     await secondaryAuth.signOut();
     await logActivity("add_user",name,"user",{email,role});
     closeModal("addUserModal");toast(`User "${name}" created!`,"ok");await loadUsers()
@@ -1245,15 +1389,57 @@ function toggleCanAddUsers(role){
   if(field) field.style.display=role==="admin"?"block":"none";
 }
 
+function previewLogo(url){
+  const preview=document.getElementById("logoPreview");
+  const img=document.getElementById("logoImg");
+  if(url){preview.style.display="block";img.src=url;}
+  else{preview.style.display="none";}
+}
+
 async function openAddCompany(){
-  const name=prompt("Company name (e.g. Kasera Industries):");if(!name)return;
-  const id=name.toLowerCase().replace(/[^a-z0-9]/g,"_").replace(/__+/g,"_");
+  document.getElementById("cmpName").value="";
+  document.getElementById("cmpCode").value="";
+  document.getElementById("cmpGST").value="";
+  document.getElementById("cmpPAN").value="";
+  document.getElementById("cmpAddress").value="";
+  document.getElementById("cmpPhone").value="";
+  document.getElementById("cmpEmail").value="";
+  document.getElementById("cmpWebsite").value="";
+  document.getElementById("cmpLogo").value="";
+  document.getElementById("logoPreview").style.display="none";
+  document.getElementById("addCompanyMsg").textContent="";
+  document.getElementById("addCompanyModal").classList.remove("hidden");
+}
+
+async function submitAddCompany(){
+  const name=document.getElementById("cmpName").value.trim();
+  const code=document.getElementById("cmpCode").value.trim();
+  if(!name||!code){
+    document.getElementById("addCompanyMsg").textContent="Name and code are required.";
+    document.getElementById("addCompanyMsg").className="auth-msg err";
+    return;
+  }
+  const id=code.toLowerCase();
   try{
-    await db.collection("vault_companies").doc(id).set({name,createdAt:Date.now(),createdBy:CURRENT.uid});
-    await logActivity("create_company",name,"company",{id});
+    await db.collection("vault_companies").doc(id).set({
+      name,code,
+      gst:document.getElementById("cmpGST").value.trim(),
+      pan:document.getElementById("cmpPAN").value.trim(),
+      address:document.getElementById("cmpAddress").value.trim(),
+      phone:document.getElementById("cmpPhone").value.trim(),
+      email:document.getElementById("cmpEmail").value.trim(),
+      website:document.getElementById("cmpWebsite").value.trim(),
+      logo:document.getElementById("cmpLogo").value.trim(),
+      createdAt:Date.now(),createdBy:CURRENT.uid
+    });
+    await logActivity("create_company",name,"company",{id,code});
     toast("Company created: "+name,"ok");
+    closeModal("addCompanyModal");
     await loadCompanies();
-  }catch(e){toast("Failed: "+e.message,"err")}
+  }catch(e){
+    document.getElementById("addCompanyMsg").textContent="Failed: "+e.message;
+    document.getElementById("addCompanyMsg").className="auth-msg err";
+  }
 }
 
 async function loadAllLogs(){
