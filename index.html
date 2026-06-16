@@ -829,24 +829,25 @@
           </div>
         </div>
         <h1>Secure vault login</h1>
-        <p>Password and PIN are required before the vault opens. Firebase login is used when configured; demo fallback works locally.</p>
+        <p>Password and PIN are required before the vault opens. Firebase login is required in production; local preview is only for testing.</p>
         <button class="google-btn" type="button" id="googleLoginBtn"><span class="google-dot">G</span> Continue with Google</button>
         <div class="divider">or use email</div>
         <div class="field">
           <label>Email</label>
-          <input id="loginEmail" type="email" value="admin@kaseraindustries.in" autocomplete="username" />
+          <input id="loginEmail" type="email" placeholder="name@kaseraindustries.in" autocomplete="username" />
         </div>
         <div class="field">
           <label>Password</label>
-          <input id="loginPassword" type="password" placeholder="Demo: Kasera@123" autocomplete="current-password" />
+          <input id="loginPassword" type="password" placeholder="Enter Firebase password" autocomplete="current-password" />
         </div>
         <div class="field">
           <label>PIN</label>
-          <input id="loginPin" type="password" placeholder="Enter PIN. First-time local fallback: 2468" inputmode="numeric" autocomplete="one-time-code" />
+          <input id="loginPin" type="password" placeholder="Enter PIN" inputmode="numeric" autocomplete="one-time-code" />
         </div>
         <div class="auth-actions">
           <span class="auth-status" style="margin:0">New user or forgot PIN?</span>
           <button class="link-btn" type="button" id="openPinSetupLogin">Create / Change PIN</button>
+          <button class="link-btn" type="button" id="resetPasswordBtn">Reset Password</button>
         </div>
         <button class="btn orange" type="submit" style="width:100%">Unlock vault</button>
         <div class="auth-status" id="authStatus">Firebase ready after Cloudflare secrets are injected.</div>
@@ -1653,12 +1654,14 @@
           requestedBy: currentUser?.email || email,
           requestedAt: new Date().toISOString()
         });
-        const localPreview = location.protocol === "file:" || !isConfigured(ENV.appsScriptUrl, "__APPS_SCRIPT_URL__");
+        const localPreview = isLocalPreviewMode();
         status.textContent = localPreview
           ? `Local preview OTP: ${code}. Enter it and save new PIN.`
           : `OTP sent by ${channel}. Enter it and save new PIN.`;
       } catch (error) {
-        status.textContent = `Local preview OTP: ${code}. Enter it and save new PIN.`;
+        status.textContent = isLocalPreviewMode()
+          ? `Local preview OTP: ${code}. Enter it and save new PIN.`
+          : "OTP could not be sent. Check APPS_SCRIPT_URL and Task API.";
       }
     }
 
@@ -1822,6 +1825,14 @@
       return value && value !== placeholder && !value.includes("__");
     }
 
+    function isLocalPreviewMode() {
+      return location.protocol === "file:" || ["", "localhost", "127.0.0.1"].includes(location.hostname);
+    }
+
+    function productionFirebaseMessage() {
+      return "Firebase is not connected. Add Cloudflare environment variables and redeploy.";
+    }
+
     function initFirebase() {
       const projectId = isConfigured(ENV.firebaseProjectId, "__FIREBASE_PROJECT_ID__") ? ENV.firebaseProjectId : "kasera-delegation";
       const authDomain = isConfigured(ENV.firebaseAuthDomain, "__FIREBASE_AUTH_DOMAIN__") ? ENV.firebaseAuthDomain : projectId + ".firebaseapp.com";
@@ -1831,8 +1842,10 @@
       const configured = isConfigured(ENV.firebaseApiKey, "__FIREBASE_API_KEY__");
       if (!configured || !window.firebase) {
         const status = document.getElementById("authStatus");
-        if (status) status.textContent = "Firebase API key is not injected here. Deploy through Cloudflare/build to load live data.";
-        setFirebaseStatus("Firebase: not injected");
+        if (status) status.textContent = isLocalPreviewMode()
+          ? "Local preview mode. Production login needs Firebase secrets."
+          : productionFirebaseMessage();
+        setFirebaseStatus(isLocalPreviewMode() ? "Firebase: local preview" : "Firebase: missing config");
         return;
       }
       try {
@@ -1859,6 +1872,25 @@
       }
     }
 
+    async function resetFirebasePassword() {
+      const status = document.getElementById("authStatus");
+      const email = document.getElementById("loginEmail").value.trim();
+      if (!email) {
+        status.textContent = "Enter your email first, then click Reset Password.";
+        return;
+      }
+      if (!firebaseReady || !firebaseAuth) {
+        status.textContent = productionFirebaseMessage();
+        return;
+      }
+      try {
+        await firebaseAuth.sendPasswordResetEmail(email);
+        status.textContent = "Password reset email sent to " + email + ". Check inbox/spam.";
+      } catch (error) {
+        status.textContent = error.message || "Password reset failed.";
+      }
+    }
+
     async function loginVault(email, password, pin) {
       if (firebaseReady) {
         const cred = await firebaseAuth.signInWithEmailAndPassword(email, password);
@@ -1874,16 +1906,17 @@
         await loadFirebaseVault();
         return;
       }
-      if (password !== "Kasera@123") throw new Error("Wrong demo password.");
+      if (!isLocalPreviewMode()) throw new Error(productionFirebaseMessage());
+      if (password !== "Kasera@123") throw new Error("Wrong local preview password.");
       if (!(await verifyVaultPin(pin, email))) throw new Error("Wrong PIN. Use Create / Change PIN if needed.");
-      currentUser = { email, uid: "demo-user" };
+      currentUser = { email, uid: "local-preview-user" };
       sessionPassword = password;
     }
 
     async function googleLoginVault() {
       const pin = document.getElementById("loginPin").value;
       if (!pin) throw new Error("Enter PIN before Google login.");
-      if (!firebaseReady) throw new Error("Google login needs Firebase config. Use demo password locally.");
+      if (!firebaseReady) throw new Error(productionFirebaseMessage());
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: "select_account" });
       const cred = await firebaseAuth.signInWithPopup(provider);
@@ -2351,7 +2384,7 @@
         link: fileLink,
         fileId,
         uploadedBy: currentUser?.email || "Kasera User",
-        uploadedByUid: currentUser?.uid || "demo-user",
+        uploadedByUid: currentUser?.uid || "local-preview-user",
         uploadedByName: currentUser?.email || "Kasera User",
         uploadedByEmail: currentUser?.email || "",
         uploadedAt: Date.now()
@@ -2868,7 +2901,7 @@
       status.textContent = "Checking password and PIN...";
       try {
         await loginVault(email, password, pin);
-        openVaultAfterLogin(firebaseReady ? "Firebase email login successful" : "Demo login successful");
+        openVaultAfterLogin(firebaseReady ? "Firebase email login successful" : "Local preview login successful");
       } catch (error) {
         status.textContent = error.message || "Login failed.";
       }
@@ -2886,6 +2919,11 @@
     });
 
     document.getElementById("openPinSetupLogin").addEventListener("click", () => openPinModal("login"));
+    document.getElementById("resetPasswordBtn").addEventListener("click", () => {
+      resetFirebasePassword().catch(error => {
+        document.getElementById("authStatus").textContent = error.message || "Password reset failed.";
+      });
+    });
     document.getElementById("changePinBtn").addEventListener("click", () => openPinModal("security"));
     document.getElementById("sendPinOtpBtn").addEventListener("click", () => {
       sendPinOtp().catch(error => {
