@@ -33,4 +33,9 @@ sed -i "s|__FIREBASE_MESSAGING_SENDER_ID__|$FIREBASE_MESSAGING_SENDER_ID_ESCAPED
 sed -i "s|__FIREBASE_APP_ID__|$FIREBASE_APP_ID_ESCAPED|g" index.html
 sed -i "s|__APPS_SCRIPT_URL__|$APPS_SCRIPT_URL_ESCAPED|g" index.html
 
-echo "Secrets injected successfully"
+if grep -q 'firebaseApiKey: "__FIREBASE_API_KEY__"' index.html; then
+  echo "Firebase API key was not injected. Check FIREBASE_API_KEY in Cloudflare Pages production variables."
+  exit 1
+fi
+
+echo "Secrets injected successfully for Firebase project: $FIREBASE_PROJECT_ID"
