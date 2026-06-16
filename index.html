@@ -1392,7 +1392,6 @@
     let securitySettings = load("vaultSecuritySettings", defaultSecuritySettings);
     let autoLogoutTimer = null;
     let autoLogoutEventsBound = false;
-    const defaultPin = "2468";
     let pinOtpState = { email: "", code: "", expiresAt: 0, channel: "email" };
 
     initFirebase();
@@ -1587,7 +1586,8 @@
       const clean = cleanPin(pin);
       if (!/^[0-9]{4,6}$/.test(clean)) return false;
       const key = pinHashKey(email);
-      const storedHash = localStorage.getItem(key) || await hashPin(email, defaultPin);
+      const storedHash = localStorage.getItem(key);
+      if (!storedHash) return false;
       return await hashPin(email, clean) === storedHash;
     }
 
@@ -1620,13 +1620,19 @@
 
     function openPinModal(source = "login") {
       const email = currentUser?.email || document.getElementById("loginEmail")?.value || "";
-      document.getElementById("pinModalTitle").textContent = source === "security" ? "Change PIN" : "Create / Change PIN";
+      document.getElementById("pinModalTitle").textContent = source === "security"
+        ? "Change PIN"
+        : source === "firstTime"
+          ? "Create PIN for first login"
+          : "Create / Change PIN";
       document.getElementById("pinEmail").value = email;
       document.getElementById("pinChannel").value = "email";
       document.getElementById("pinOtp").value = "";
       document.getElementById("newPin").value = "";
       document.getElementById("confirmPin").value = "";
-      document.getElementById("pinStatus").textContent = "Step 1: send OTP.";
+      document.getElementById("pinStatus").textContent = source === "firstTime"
+        ? "First login needs a PIN. Step 1: send OTP."
+        : "Step 1: send OTP.";
       pinOtpState = { email: "", code: "", expiresAt: 0, channel: "email" };
       openModal("pinModal");
     }
@@ -1642,26 +1648,54 @@
       const code = String(Math.floor(100000 + Math.random() * 900000));
       pinOtpState = { email, code, channel, expiresAt: Date.now() + 10 * 60 * 1000 };
       status.textContent = "Sending OTP...";
+      const subject = "Kasera Vault PIN OTP";
+      const body = [
+        "Kasera Document Vault",
+        "",
+        "Your OTP for PIN setup is: " + code,
+        "",
+        "This OTP is valid for 10 minutes.",
+        "If you did not request this, please ignore this email."
+      ].join("\n");
+      const htmlBody = `<div style="font-family:Arial,sans-serif;line-height:1.5;color:#182230">
+        <h2>Kasera Document Vault</h2>
+        <p>Your OTP for PIN setup is:</p>
+        <div style="font-size:28px;font-weight:700;letter-spacing:4px;color:#1d4ed8">${code}</div>
+        <p>This OTP is valid for 10 minutes.</p>
+        <p>If you did not request this, please ignore this email.</p>
+      </div>`;
       try {
-        await postTaskApi({
+        const result = await postTaskApi({
           action: "send_otp",
+          taskAction: "sendOtp",
+          type: "vault_pin_otp",
           purpose: "vault_pin",
           email,
+          to: email,
+          recipient: email,
           channel,
+          subject,
+          body,
+          message: body,
+          htmlBody,
           companyId: selectedCompanyId,
           companyName: companyName(),
           otp: code,
+          code,
           requestedBy: currentUser?.email || email,
           requestedAt: new Date().toISOString()
         });
+        if (result && result.success === false) {
+          throw new Error(result.message || result.error || "Task API rejected OTP request.");
+        }
         const localPreview = isLocalPreviewMode();
         status.textContent = localPreview
           ? `Local preview OTP: ${code}. Enter it and save new PIN.`
-          : `OTP sent by ${channel}. Enter it and save new PIN.`;
+          : `OTP sent to ${email}. Check inbox/spam, then save new PIN.`;
       } catch (error) {
         status.textContent = isLocalPreviewMode()
           ? `Local preview OTP: ${code}. Enter it and save new PIN.`
-          : "OTP could not be sent. Check APPS_SCRIPT_URL and Task API.";
+          : (error.message || "OTP could not be sent. Check APPS_SCRIPT_URL and Task API.");
       }
     }
 
@@ -1898,16 +1932,30 @@
         sessionPassword = password;
         await loadCurrentUserProfile();
         await syncPinFromFirebase();
+        if (!hasCustomPin(currentUser.email)) {
+          await firebaseAuth.signOut().catch(() => {});
+          document.getElementById("loginEmail").value = currentUser.email;
+          currentUser = null;
+          sessionPassword = "";
+          setTimeout(() => openPinModal("firstTime"), 50);
+          throw new Error("First time login: create your PIN with OTP first.");
+        }
         if (!(await verifyVaultPin(pin, currentUser.email))) {
           await firebaseAuth.signOut().catch(() => {});
           currentUser = null;
           throw new Error("Wrong PIN. Use Create / Change PIN if needed.");
         }
+        await saveVaultPin(currentUser.email, pin);
         await loadFirebaseVault();
         return;
       }
       if (!isLocalPreviewMode()) throw new Error(productionFirebaseMessage());
       if (password !== "Kasera@123") throw new Error("Wrong local preview password.");
+      if (!hasCustomPin(email)) {
+        document.getElementById("loginEmail").value = email;
+        setTimeout(() => openPinModal("firstTime"), 50);
+        throw new Error("First time login: create your PIN with OTP first.");
+      }
       if (!(await verifyVaultPin(pin, email))) throw new Error("Wrong PIN. Use Create / Change PIN if needed.");
       currentUser = { email, uid: "local-preview-user" };
       sessionPassword = password;
@@ -1924,11 +1972,20 @@
       sessionPassword = document.getElementById("loginPassword").value || "google";
       await loadCurrentUserProfile();
       await syncPinFromFirebase();
+      if (!hasCustomPin(currentUser.email)) {
+        await firebaseAuth.signOut().catch(() => {});
+        document.getElementById("loginEmail").value = currentUser.email;
+        currentUser = null;
+        sessionPassword = "";
+        setTimeout(() => openPinModal("firstTime"), 50);
+        throw new Error("First time login: create your PIN with OTP first.");
+      }
       if (!(await verifyVaultPin(pin, currentUser.email))) {
         await firebaseAuth.signOut().catch(() => {});
         currentUser = null;
         throw new Error("Wrong PIN. Use Create / Change PIN if needed.");
       }
+      await saveVaultPin(currentUser.email, pin);
       await loadFirebaseVault();
     }
 
