@@ -1666,11 +1666,12 @@
       </div>`;
       try {
         const result = await postTaskApi({
-          action: "send_otp",
+          action: "sendOTP",
           taskAction: "sendOtp",
           type: "vault_pin_otp",
           purpose: "vault_pin",
           email,
+          name: email.split("@")[0],
           to: email,
           recipient: email,
           channel,
