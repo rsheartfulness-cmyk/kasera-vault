@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -435,9 +436,13 @@
       transition: transform .15s ease, box-shadow .15s ease;
     }
     .doc-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+    .doc-card.folded-card { padding: 14px 16px; min-height: 0; }
     .doc-card.folded-card .doc-desc,
     .doc-card.folded-card .doc-extra,
     .doc-card.folded-card .doc-actions { display: none; }
+    .doc-card.folded-card .doc-head { align-items: center; }
+    .doc-card.folded-card .file-type { width: 38px; height: 38px; font-size: 10px; }
+    .doc-card.folded-card .doc-name { font-size: 15px; line-height: 1.35; }
     .doc-head { display: flex; align-items: flex-start; gap: 12px; }
     .file-type {
       width: 44px;
@@ -1359,17 +1364,20 @@
       { id: "kasera-industries", name: "Kasera Industries", code: "KI", email: "admin@kaseraindustries.in", phone: "91" },
       { id: "kasera-steel", name: "Kasera Steel", code: "KS", email: "", phone: "" }
     ];
-    const sampleDocs = [
-      { name: "GST Return April.pdf", folder: "GST/Returns", size: 1820000, type: "application/pdf", desc: "Monthly GST return and acknowledgement.", tags: ["gst", "return"], sensitivity: "Restricted", link: "https://drive.google.com/", uploadedBy: "Accounts Team", uploadedAt: Date.now() - 86400000 },
-      { name: "Vendor Payment Sheet.xlsx", folder: "Accounts/Payments", size: 642000, type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", desc: "Pending vendor payment working.", tags: ["payment", "vendor"], sensitivity: "Confidential", link: "https://docs.google.com/spreadsheets/", uploadedBy: "Accounts Team", uploadedAt: Date.now() - 172800000 },
-      { name: "Employee KYC Pack.zip", folder: "HR/KYC", size: 3540000, type: "application/zip", desc: "New employee KYC documents.", tags: ["employee", "kyc"], sensitivity: "Restricted", link: "https://drive.google.com/", uploadedBy: "HR", uploadedAt: Date.now() - 259200000 },
-      { name: "Dispatch Challan 1084.pdf", folder: "Dispatch/Challans", size: 480000, type: "application/pdf", desc: "Signed challan copy for delivery.", tags: ["dispatch", "challan"], sensitivity: "Internal", link: "https://drive.google.com/", uploadedBy: "Dispatch", uploadedAt: Date.now() - 3600000 }
-    ];
+    const ROOT_FOLDER_LABEL = "Unfiled";
+    const sampleDocs = [];
+    const storageMigrationVersion = "vault-clean-2026-06-16";
+    const legacySeedDocNames = new Set([
+      "GST Return April.pdf",
+      "Vendor Payment Sheet.xlsx",
+      "Employee KYC Pack.zip",
+      "Dispatch Challan 1084.pdf"
+    ]);
     const blockedExtensions = ["exe", "bat", "cmd", "js", "vbs", "msi", "ps1", "scr"];
     const defaultSecuritySettings = { idleLogoutMinutes: 15, maxUploadFiles: 250, maxFileSizeMb: 25 };
 
     let folders = normalizeFolders(load("vaultFolders", defaultFolders));
-    let docs = load("vaultDocs", sampleDocs.map((doc, index) => ({ ...doc, id: "doc-" + (index + 1) })));
+    let docs = normalizeDocs(load("vaultDocs", []));
     let trash = load("vaultTrash", []);
     let users = load("vaultUsers", defaultUsers);
     let companies = load("vaultCompanies", defaultCompanies);
@@ -1380,8 +1388,8 @@
     ]);
     let selectedFolder = "";
     let currentView = "vault";
-    let cardsMinimized = false;
-    let foldersFolded = false;
+    let cardsMinimized = load("vaultCardsMinimized", false) === true;
+    let foldersFolded = load("vaultFoldersFolded", false) === true;
     let foldedSections = load("vaultFoldedSections", {});
     let firebaseReady = false;
     let firebaseAuth = null;
@@ -1403,7 +1411,37 @@
       return saved ? JSON.parse(saved) : fallback;
     }
 
+    function isLegacySeedDoc(doc) {
+      if (!doc || !legacySeedDocNames.has(String(doc.name || "").trim())) return false;
+      const uploadedBy = String(doc.uploadedBy || "");
+      const link = String(doc.link || "");
+      return ["Accounts Team", "HR", "Dispatch"].includes(uploadedBy)
+        || link.includes("drive.google.com")
+        || link.includes("docs.google.com");
+    }
+
+    function cleanLegacySeedData() {
+      if (localStorage.getItem(storageMigrationVersion) === "done") return;
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (!key || !(/_docs$/.test(key) || key === "vaultDocs")) continue;
+        try {
+          const parsed = JSON.parse(localStorage.getItem(key) || "[]");
+          if (!Array.isArray(parsed)) continue;
+          const cleaned = parsed.filter(doc => !isLegacySeedDoc(doc));
+          if (cleaned.length !== parsed.length) {
+            localStorage.setItem(key, JSON.stringify(cleaned));
+          }
+        } catch (error) {
+        }
+      }
+      localStorage.setItem(storageMigrationVersion, "done");
+    }
+
+    cleanLegacySeedData();
+
     function save() {
+      syncMissingFoldersFromDocs();
       folders = normalizeFolders(folders);
       localStorage.setItem("vaultCompanies", JSON.stringify(companies));
       localStorage.setItem("vaultSelectedCompanyId", JSON.stringify(selectedCompanyId));
@@ -1416,6 +1454,8 @@
       localStorage.setItem(companyKey("foldedSections"), JSON.stringify(foldedSections));
       localStorage.setItem("vaultSecuritySettings", JSON.stringify(securitySettings));
       localStorage.setItem(companyKey("securitySettings"), JSON.stringify(securitySettings));
+      localStorage.setItem("vaultCardsMinimized", JSON.stringify(cardsMinimized));
+      localStorage.setItem("vaultFoldersFolded", JSON.stringify(foldersFolded));
       queueFirebaseSave();
     }
 
@@ -1426,17 +1466,60 @@
     function loadCompanyState(companyId) {
       selectedCompanyId = companyId;
       folders = normalizeFolders(load(companyKey("folders"), defaultFolders));
-      docs = load(companyKey("docs"), sampleDocs.map((doc, index) => ({ ...doc, id: "doc-" + (index + 1) })));
+      docs = normalizeDocs(load(companyKey("docs"), []));
       trash = load(companyKey("trash"), []);
       users = load(companyKey("users"), defaultUsers);
       whatsappLogs = load(companyKey("whatsappLogs"), []);
       activity = load(companyKey("activity"), [{ action: "Company opened", detail: companyName(companyId), at: Date.now(), user: "System" }]);
       foldedSections = load(companyKey("foldedSections"), {});
       securitySettings = load(companyKey("securitySettings"), load("vaultSecuritySettings", defaultSecuritySettings));
+      syncMissingFoldersFromDocs();
     }
 
     function companyName(id = selectedCompanyId) {
       return (companies.find(company => company.id === id) || companies[0])?.name || "Company";
+    }
+
+    function normalizeFolderPath(value) {
+      return String(value || "")
+        .split("/")
+        .map(part => part.trim())
+        .filter(Boolean)
+        .join("/");
+    }
+
+    function displayFolderName(value) {
+      const clean = normalizeFolderPath(value);
+      return clean || ROOT_FOLDER_LABEL;
+    }
+
+    function normalizeDocRecord(doc, index = 0) {
+      const cleanFolder = normalizeFolderPath(doc?.folder);
+      return {
+        id: doc?.id || "doc-" + Date.now() + "-" + index,
+        ...doc,
+        name: String(doc?.name || "Untitled document"),
+        folder: cleanFolder || ROOT_FOLDER_LABEL,
+        desc: String(doc?.desc || ""),
+        tags: Array.isArray(doc?.tags) ? doc.tags.filter(Boolean) : [],
+        uploadedBy: doc?.uploadedBy || doc?.uploadedByName || doc?.uploadedByEmail || "Kasera User",
+        uploadedAt: Number(doc?.uploadedAt) || Date.now(),
+        size: Number(doc?.size || 0)
+      };
+    }
+
+    function normalizeDocs(list) {
+      return Array.isArray(list) ? list.map((doc, index) => normalizeDocRecord(doc, index)) : [];
+    }
+
+    function syncMissingFoldersFromDocs() {
+      const missing = docs
+        .map(doc => normalizeFolderPath(doc.folder))
+        .filter(Boolean)
+        .filter(path => path !== ROOT_FOLDER_LABEL && !folders.includes(path));
+      if (missing.length) {
+        folders = normalizeFolders(folders.concat(missing));
+      }
     }
 
     function docId(value) {
@@ -2075,11 +2158,12 @@
           .filter(item => item.id !== "__security_settings__" && item.data().kind !== "security_settings")
           .map(item => item.data().path || item.id);
         folders = remoteFolders.length ? normalizeFolders(remoteFolders) : normalizeFolders(defaultFolders);
-        const remoteDocs = docSnap.docs.map(item => {
+        const remoteDocs = docSnap.docs.map((item, index) => {
           const data = item.data();
-          return { id: item.id, ...data, uploadedBy: data.uploadedByName || data.uploadedByEmail || data.uploadedBy || "User" };
+          return normalizeDocRecord({ id: item.id, ...data, uploadedBy: data.uploadedByName || data.uploadedByEmail || data.uploadedBy || "User" }, index);
         });
         docs = remoteDocs;
+        syncMissingFoldersFromDocs();
         trash = trashSnap.docs.map(item => ({ id: item.id, ...item.data() }));
         activity = activitySnap.docs.map(item => {
           const data = item.data();
@@ -2166,6 +2250,9 @@
     }
 
     function render() {
+      syncMissingFoldersFromDocs();
+      document.getElementById("collapseCardsBtn").textContent = cardsMinimized ? "Expand Cards" : "Minimize Cards";
+      document.getElementById("folderToggleBtn").textContent = foldersFolded ? "Open" : "Fold";
       renderCompanySwitcher();
       renderFolders();
       renderUploadFolders();
@@ -2204,7 +2291,9 @@
       }
       const allCount = docs.length;
       const tree = buildFolderTree();
+      const unfiledCount = docs.filter(doc => displayFolderName(doc.folder) === ROOT_FOLDER_LABEL).length;
       const rows = [`<button class="folder-btn ${selectedFolder === "" ? "active" : ""}" onclick="selectFolder('')"><span>All folders</span><b>A</b><span class="folder-count">${allCount}</span></button>`]
+        .concat(unfiledCount ? [`<button class="folder-btn ${selectedFolder === ROOT_FOLDER_LABEL ? "active" : ""}" onclick="selectFolder('${escapeAttr(ROOT_FOLDER_LABEL)}')"><span>${ROOT_FOLDER_LABEL}</span><b>U</b><span class="folder-count">${unfiledCount}</span></button>`] : [])
         .concat(tree.map(node => renderFolderNode(node, 0)));
       document.getElementById("folderList").innerHTML = `<div class="folder-tree">${rows.join("")}</div>`;
     }
@@ -2213,7 +2302,9 @@
       const root = [];
       const byPath = {};
       folders.forEach(path => {
-        const parts = path.split("/");
+        const normalizedPath = normalizeFolderPath(path);
+        if (!normalizedPath) return;
+        const parts = normalizedPath.split("/");
         let currentPath = "";
         let level = root;
         parts.forEach(part => {
@@ -2231,7 +2322,10 @@
     function renderFolderNode(node, depth) {
       const hasChildren = node.children.length > 0;
       const folded = foldedSections["tree:" + node.path] === true;
-      const count = docs.filter(doc => doc.folder === node.path || doc.folder.startsWith(node.path + "/")).length;
+      const count = docs.filter(doc => {
+        const folderPath = normalizeFolderPath(doc.folder);
+        return folderPath === node.path || folderPath.startsWith(node.path + "/");
+      }).length;
       const expander = hasChildren
         ? `<button class="folder-expander" onclick="toggleTreeFolder('${escapeAttr(node.path)}')">${folded ? "+" : "-"}</button>`
         : '<span style="width:24px;flex:0 0 auto"></span>';
@@ -2241,8 +2335,8 @@
     }
 
     function selectFolder(folder) {
-      selectedFolder = folder;
-      document.getElementById("viewTitle").textContent = folder || "All Documents";
+      selectedFolder = folder === ROOT_FOLDER_LABEL ? ROOT_FOLDER_LABEL : normalizeFolderPath(folder);
+      document.getElementById("viewTitle").textContent = selectedFolder || "All Documents";
       setView("vault");
     }
 
@@ -2270,8 +2364,10 @@
       const type = document.getElementById("typeFilter").value;
       const sort = document.getElementById("sortFilter").value;
       let list = docs.filter(doc => {
-        const haystack = [doc.name, doc.folder, doc.desc, (doc.tags || []).join(" "), doc.uploadedBy].join(" ").toLowerCase();
-        if (selectedFolder && doc.folder !== selectedFolder && !doc.folder.startsWith(selectedFolder + "/")) return false;
+        const folderName = displayFolderName(doc.folder);
+        const haystack = [doc.name, folderName, doc.desc, (doc.tags || []).join(" "), doc.uploadedBy].join(" ").toLowerCase();
+        if (selectedFolder === ROOT_FOLDER_LABEL && folderName !== ROOT_FOLDER_LABEL) return false;
+        if (selectedFolder && selectedFolder !== ROOT_FOLDER_LABEL && folderName !== selectedFolder && !folderName.startsWith(selectedFolder + "/")) return false;
         if (q && !haystack.includes(q)) return false;
         if (type && getKind(doc) !== type) return false;
         return true;
@@ -2292,15 +2388,16 @@
         return;
       }
       const grouped = list.reduce((acc, doc) => {
-        acc[doc.folder] ||= [];
-        acc[doc.folder].push(doc);
+        const folderName = displayFolderName(doc.folder);
+        acc[folderName] ||= [];
+        acc[folderName].push(normalizeDocRecord(doc));
         return acc;
       }, {});
       document.getElementById("docGrid").innerHTML = Object.entries(grouped).map(([folder, items]) => {
         const folded = foldedSections[folder] === true;
         return `<section class="folder-section">
           <div class="folder-section-head">
-            <div><div class="folder-section-title">${escapeHtml(folder)}</div><div class="meta">${items.length} document(s)</div></div>
+            <div><div class="folder-section-title">${escapeHtml(folder || ROOT_FOLDER_LABEL)}</div><div class="meta">${items.length} document(s)</div></div>
             <button class="btn ghost small" onclick="toggleFolderSection('${escapeAttr(folder)}')">${folded ? "Open" : "Fold"}</button>
           </div>
           ${folded ? "" : `<div class="folder-docs">${items.map(docCard).join("")}</div>`}
@@ -2315,7 +2412,7 @@
           <div class="file-type" style="background:${fileColor(ext)}">${escapeHtml(ext || "file")}</div>
           <div>
             <div class="doc-name">${escapeHtml(doc.name)}</div>
-            <div class="meta"><span>${escapeHtml(doc.folder)}</span><span>${formatSize(doc.size)}</span></div>
+            <div class="meta"><span>${escapeHtml(displayFolderName(doc.folder))}</span><span>${formatSize(doc.size)}</span></div>
           </div>
         </div>
         <p class="doc-desc">${escapeHtml(doc.desc || "No description added.")}</p>
@@ -2391,7 +2488,7 @@
         toast("Upload blocked for this user.");
         return;
       }
-      const folder = document.getElementById("uploadFolder").value || folders[0];
+      const folder = normalizeFolderPath(document.getElementById("uploadFolder").value || folders[0]) || ROOT_FOLDER_LABEL;
       const tags = document.getElementById("uploadTags").value.split(",").map(tag => tag.trim()).filter(Boolean);
       const desc = document.getElementById("uploadDesc").value.trim();
       let link = document.getElementById("uploadLink").value.trim();
@@ -2655,14 +2752,23 @@
 
     function toggleCards() {
       cardsMinimized = !cardsMinimized;
-      document.getElementById("collapseCardsBtn").textContent = cardsMinimized ? "Expand Cards" : "Minimize Cards";
+      save();
       renderDocs();
     }
 
     function toggleFolders() {
       foldersFolded = !foldersFolded;
-      document.getElementById("folderToggleBtn").textContent = foldersFolded ? "Open" : "Fold";
+      save();
       renderFolders();
+    }
+
+    function expandFolderPathInTree(path) {
+      const parts = normalizeFolderPath(path).split("/").filter(Boolean);
+      let current = "";
+      parts.forEach(part => {
+        current = current ? current + "/" + part : part;
+        delete foldedSections["tree:" + current];
+      });
     }
 
     function toggleFolderSection(folder) {
@@ -2684,14 +2790,17 @@
         return;
       }
       const parent = document.getElementById("folderParent").value;
-      const cleanName = name.trim().replace(/\//g, " ").replace(/\s+/g, " ");
-      const clean = parent ? parent + "/" + cleanName : cleanName;
+      const cleanName = normalizeFolderPath(name.trim().replace(/\s+/g, " "));
+      const clean = normalizeFolderPath(parent ? parent + "/" + cleanName : cleanName);
       if (!clean) return;
       if (folders.includes(clean)) {
         toast("Folder already exists.");
         return;
       }
       folders.push(clean);
+      folders = normalizeFolders(folders);
+      foldersFolded = false;
+      expandFolderPathInTree(clean);
       addActivity("Folder created", clean);
       save();
       render();
