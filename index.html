@@ -6,7 +6,7 @@
   <title>Document Vault - Kasera Industries</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Nunito+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #f7fbff;
@@ -29,13 +29,16 @@
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
     body {
-      font-family: Manrope, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Nunito Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background:
         radial-gradient(circle at top left, rgba(219,234,254,.75), transparent 34%),
         linear-gradient(180deg, #ffffff 0%, var(--bg) 42%, #f8fbff 100%);
       color: var(--ink);
     }
     button, input, select, textarea { font: inherit; }
+    h1, h2, h3, h4, .brand-title, .toolbar strong, .folder-section-title, .doc-name, .btn {
+      font-family: Manrope, "Nunito Sans", sans-serif;
+    }
     button { cursor: pointer; }
     .hidden { display: none !important; }
     .auth-view {
@@ -196,10 +199,10 @@
       background: linear-gradient(180deg, #f0f8ff, #ffffff);
       color: var(--ink);
       border-right: 1px solid var(--line);
-      padding: 22px 18px;
+      padding: 24px 20px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 20px;
     }
     .brand { display: flex; align-items: center; gap: 12px; }
     .brand-mark {
@@ -254,8 +257,8 @@
       border: 0;
       width: 100%;
       text-align: left;
-      border-radius: 10px;
-      padding: 11px 12px;
+      border-radius: 14px;
+      padding: 12px 14px;
       background: transparent;
       color: #3f4f64;
       font-weight: 700;
@@ -337,11 +340,11 @@
     .btn {
       border: 0;
       border-radius: 999px;
-      padding: 11px 16px;
+      padding: 11px 18px;
       background: var(--brand);
       color: #fff;
       font-weight: 800;
-      box-shadow: 0 10px 20px rgba(91,77,255,.20);
+      box-shadow: 0 8px 18px rgba(37,99,235,.16);
     }
     .btn:hover { background: var(--brand-dark); }
     .btn.orange { background: var(--orange); box-shadow: 0 10px 20px rgba(249,115,22,.18); }
@@ -388,7 +391,7 @@
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      padding: 14px;
+      padding: 16px;
       display: flex;
       align-items: center;
       flex-wrap: wrap;
@@ -421,7 +424,7 @@
       background: #eef2f8;
       border: 1px solid #dce3ef;
       border-radius: var(--radius);
-      padding: 12px;
+      padding: 16px;
       display: grid;
       gap: 12px;
     }
@@ -438,8 +441,8 @@
     .doc-card {
       background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 15px;
+      border-radius: 16px;
+      padding: 18px;
       display: grid;
       gap: 12px;
       box-shadow: 0 8px 20px rgba(21,32,51,.06);
@@ -1404,6 +1407,7 @@
     const ROOT_FOLDER_LABEL = "Unfiled";
     const sampleDocs = [];
     const storageMigrationVersion = "vault-clean-2026-06-16";
+    const folderMoveCleanupVersion = "vault-folder-move-clean-2026-06-17";
     const legacySeedDocNames = new Set([
       "GST Return April.pdf",
       "Vendor Payment Sheet.xlsx",
@@ -1475,7 +1479,53 @@
       localStorage.setItem(storageMigrationVersion, "done");
     }
 
+    function pruneMovedDefaultFolders(folderList, docList, userList) {
+      const sourceFolders = Array.isArray(folderList) ? folderList.map(path => normalizeFolderPath(path)).filter(Boolean) : [];
+      const sourceDocs = normalizeDocs(docList || []);
+      const sourceUsers = Array.isArray(userList) ? userList : [];
+      return sourceFolders.filter(path => {
+        if (!defaultFolders.includes(path)) return true;
+        const hasNestedCopy = sourceFolders.some(other => other !== path && other.endsWith("/" + path));
+        if (!hasNestedCopy) return true;
+        const hasDocs = sourceDocs.some(doc => {
+          const folder = normalizeFolderPath(doc.folder);
+          return folder === path || folder.startsWith(path + "/");
+        });
+        if (hasDocs) return true;
+        const hasAssignedUsers = sourceUsers.some(user => normalizeFolderPath(user.access) === path);
+        if (hasAssignedUsers) return true;
+        return false;
+      });
+    }
+
+    function cleanMovedFolderDuplicates() {
+      if (localStorage.getItem(folderMoveCleanupVersion) === "done") return;
+      const companiesList = load("vaultCompanies", defaultCompanies);
+      companiesList.forEach(company => {
+        const id = company?.id;
+        if (!id) return;
+        const folderKey = `vault_${id}_folders`;
+        const docKey = `vault_${id}_docs`;
+        const userKey = `vault_${id}_users`;
+        const cleaned = pruneMovedDefaultFolders(
+          load(folderKey, defaultFolders),
+          load(docKey, []),
+          load(userKey, defaultUsers)
+        );
+        localStorage.setItem(folderKey, JSON.stringify(normalizeFolders(cleaned)));
+      });
+      const rootCleaned = pruneMovedDefaultFolders(
+        load("vaultFolders", defaultFolders),
+        load("vaultDocs", []),
+        load("vaultUsers", defaultUsers)
+      );
+      localStorage.setItem("vaultFolders", JSON.stringify(normalizeFolders(rootCleaned)));
+      localStorage.setItem(folderMoveCleanupVersion, "done");
+    }
+
     cleanLegacySeedData();
+    cleanMovedFolderDuplicates();
+    loadCompanyState(selectedCompanyId);
 
     function save() {
       syncMissingFoldersFromDocs();
@@ -2304,7 +2354,7 @@
     }
 
     function normalizeFolders(list) {
-      const set = new Set(defaultFolders);
+      const set = new Set();
       (list || []).forEach(path => {
         const clean = String(path || "").split("/").map(part => part.trim()).filter(Boolean).join("/");
         if (!clean) return;
