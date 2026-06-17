@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -397,6 +396,16 @@
       box-shadow: 0 1px 2px rgba(21,32,51,.04);
     }
     .toolbar strong { margin-right: auto; }
+    .toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .toolbar-scope {
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: #eef6ff;
+      color: var(--brand-dark);
+      font-size: 12px;
+      font-weight: 800;
+      border: 1px solid #d6e8fb;
+    }
     .toolbar select, .toolbar input {
       border: 1px solid var(--line);
       border-radius: 10px;
@@ -423,6 +432,7 @@
       gap: 12px;
       padding: 4px 4px 2px;
     }
+    .folder-section-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     .folder-section-title { font-weight: 850; }
     .folder-docs { display: grid; grid-template-columns: repeat(auto-fill, minmax(265px, 1fr)); gap: 12px; }
     .doc-card {
@@ -468,7 +478,7 @@
       font-size: 11px;
       font-weight: 850;
     }
-    .doc-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .doc-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
     .doc-actions button { width: 100%; }
     .empty {
       border: 1px dashed var(--line);
@@ -924,6 +934,7 @@
 
         <div class="toolbar">
           <strong id="viewTitle">All Documents</strong>
+          <div class="toolbar-actions" id="folderActionBar"></div>
           <button class="btn ghost small" id="collapseCardsBtn">Minimize Cards</button>
           <select id="typeFilter">
             <option value="">All types</option>
@@ -1134,6 +1145,32 @@
       <div class="modal-foot">
         <button class="btn ghost" type="button" data-close="folderModal">Cancel</button>
         <button class="btn" type="submit">Create folder</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="moveModal">
+    <form class="modal" id="moveForm">
+      <div class="modal-head">
+        <h2 id="moveModalTitle">Move item</h2>
+        <button class="close" type="button" data-close="moveModal">&times;</button>
+      </div>
+      <div class="form">
+        <input id="moveItemType" type="hidden" />
+        <input id="moveItemId" type="hidden" />
+        <div class="field">
+          <label>Item</label>
+          <input id="moveItemName" readonly />
+        </div>
+        <div class="field">
+          <label>Destination folder</label>
+          <select id="moveTargetFolder"></select>
+        </div>
+        <div class="auth-status" id="moveStatus">Choose where you want to move this item.</div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn ghost" type="button" data-close="moveModal">Cancel</button>
+        <button class="btn" type="submit">Move</button>
       </div>
     </form>
   </div>
@@ -1355,7 +1392,7 @@
     const superAdminOnlyPermissions = ["manageUsers", "manageCompanies"];
     const roleDefaults = {
       superadmin: Object.fromEntries(permissionKeys.map(key => [key, true])),
-      admin: { upload: true, download: true, editDocuments: true, deleteDocuments: true, shareWhatsapp: true, manageFolders: true, manageUsers: false, manageCompanies: false, viewReports: true, exportData: true },
+      admin: { upload: true, download: true, editDocuments: true, deleteDocuments: true, shareWhatsapp: true, manageFolders: true, manageUsers: true, manageCompanies: false, viewReports: true, exportData: true },
       supervisor: { upload: true, download: true, editDocuments: true, deleteDocuments: false, shareWhatsapp: true, manageFolders: false, manageUsers: false, manageCompanies: false, viewReports: true, exportData: false },
       employee: { upload: false, download: true, editDocuments: false, deleteDocuments: false, shareWhatsapp: false, manageFolders: false, manageUsers: false, manageCompanies: false, viewReports: false, exportData: false }
     };
@@ -1529,6 +1566,50 @@
     function activeUserProfile() {
       return users.find(user => user.email === currentUser?.email || user.uid === currentUser?.uid)
         || { id: currentUser?.uid || "unknown", name: currentUser?.email || "Employee", email: currentUser?.email || "", role: "employee", access: "Read only", active: true, canWhatsapp: false, canCompany: false, permissions: null };
+    }
+
+    function isAllFoldersAccess(value) {
+      return String(value || "").trim().toLowerCase() === "all folders";
+    }
+
+    function accessScope(user = activeUserProfile()) {
+      const raw = String(user?.access || "").trim();
+      if (!raw || isAllFoldersAccess(raw) || raw.toLowerCase() === "read only") return "";
+      return normalizeFolderPath(raw);
+    }
+
+    function canAccessFolder(folderPath, user = activeUserProfile()) {
+      if (isSuperAdminUser(user)) return true;
+      const scope = accessScope(user);
+      if (!scope) return true;
+      const folder = normalizeFolderPath(folderPath);
+      if (!folder || folder === ROOT_FOLDER_LABEL) return false;
+      return folder === scope || folder.startsWith(scope + "/");
+    }
+
+    function canManageFolderPath(folderPath, user = activeUserProfile()) {
+      if (!hasPermission("manageFolders")) return false;
+      if (isSuperAdminUser(user)) return true;
+      const scope = accessScope(user);
+      if (!scope) return true;
+      const folder = normalizeFolderPath(folderPath);
+      return folder === scope || folder.startsWith(scope + "/");
+    }
+
+    function visibleFolders(user = activeUserProfile()) {
+      return folders.filter(folder => canAccessFolder(folder, user));
+    }
+
+    function visibleUsers(user = activeUserProfile()) {
+      if (isSuperAdminUser(user)) return users;
+      if (!hasPermission("manageUsers")) return [];
+      const scope = accessScope(user);
+      return users.filter(item => {
+        if (isSuperAdminUser(item)) return false;
+        if (!scope) return true;
+        const targetScope = accessScope(item);
+        return targetScope ? (targetScope === scope || targetScope.startsWith(scope + "/")) : false;
+      });
     }
 
     function isSuperAdminUser(user) {
@@ -2237,8 +2318,12 @@
     }
 
     function setView(view) {
-      if (["companies", "users"].includes(view) && !isSuperAdminUser()) {
+      if (view === "companies" && !isSuperAdminUser()) {
         toast("Super Admin access required.");
+        view = "vault";
+      }
+      if (view === "users" && !hasPermission("manageUsers")) {
+        toast("User access control is blocked for this user.");
         view = "vault";
       }
       currentView = view;
@@ -2254,6 +2339,7 @@
       document.getElementById("collapseCardsBtn").textContent = cardsMinimized ? "Expand Cards" : "Minimize Cards";
       document.getElementById("folderToggleBtn").textContent = foldersFolded ? "Open" : "Fold";
       renderCompanySwitcher();
+      renderFolderActionBar();
       renderFolders();
       renderUploadFolders();
       renderStats();
@@ -2267,6 +2353,25 @@
       renderSecuritySettings();
     }
 
+    function renderFolderActionBar() {
+      const bar = document.getElementById("folderActionBar");
+      if (!bar) return;
+      const profile = activeUserProfile();
+      const scope = accessScope(profile);
+      const parts = [];
+      if (scope) {
+        parts.push(`<span class="toolbar-scope">Access: ${escapeHtml(scope)}</span>`);
+      } else if (!isSuperAdminUser(profile)) {
+        parts.push('<span class="toolbar-scope">Access: own permissions</span>');
+      }
+      if (selectedFolder && selectedFolder !== ROOT_FOLDER_LABEL && canManageFolderPath(selectedFolder, profile)) {
+        parts.push(`<button class="btn ghost small" type="button" onclick="renameFolder('${escapeAttr(selectedFolder)}')">Rename Folder</button>`);
+        parts.push(`<button class="btn ghost small" type="button" onclick="openMoveModal('folder', '${escapeAttr(selectedFolder)}')">Move Folder</button>`);
+        parts.push(`<button class="btn red small" type="button" onclick="deleteFolder('${escapeAttr(selectedFolder)}')">Delete Folder</button>`);
+      }
+      bar.innerHTML = parts.join("");
+    }
+
     function renderCompanySwitcher() {
       const select = document.getElementById("companySelect");
       select.innerHTML = companies.map(company => `<option value="${escapeHtml(company.id)}" ${company.id === selectedCompanyId ? "selected" : ""}>${escapeHtml(company.name)}</option>`).join("");
@@ -2277,11 +2382,14 @@
         ? "Apps Script WhatsApp endpoint connected."
         : "Uses wa.me locally. Apps Script sends when APPS_SCRIPT_URL is injected.";
       const superAdmin = isSuperAdminUser();
-      document.querySelectorAll('.nav button[data-view="companies"], .nav button[data-view="users"]').forEach(button => {
+      document.querySelectorAll('.nav button[data-view="companies"]').forEach(button => {
         button.classList.toggle("hidden", !superAdmin);
       });
+      document.querySelectorAll('.nav button[data-view="users"]').forEach(button => {
+        button.classList.toggle("hidden", !hasPermission("manageUsers"));
+      });
       document.getElementById("newCompanyBtn")?.classList.toggle("hidden", !superAdmin);
-      document.getElementById("newUserBtn")?.classList.toggle("hidden", !superAdmin);
+      document.getElementById("newUserBtn")?.classList.toggle("hidden", !hasPermission("manageUsers"));
     }
 
     function renderFolders() {
@@ -2289,9 +2397,9 @@
         document.getElementById("folderList").innerHTML = '<button class="folder-btn" onclick="toggleFolders()"><span>Open folders</span><b>O</b><span class="folder-count">+</span></button>';
         return;
       }
-      const allCount = docs.length;
+      const allCount = getVisibleDocs(true).length;
       const tree = buildFolderTree();
-      const unfiledCount = docs.filter(doc => displayFolderName(doc.folder) === ROOT_FOLDER_LABEL).length;
+      const unfiledCount = getVisibleDocs(true).filter(doc => displayFolderName(doc.folder) === ROOT_FOLDER_LABEL).length;
       const rows = [`<button class="folder-btn ${selectedFolder === "" ? "active" : ""}" onclick="selectFolder('')"><span>All folders</span><b>A</b><span class="folder-count">${allCount}</span></button>`]
         .concat(unfiledCount ? [`<button class="folder-btn ${selectedFolder === ROOT_FOLDER_LABEL ? "active" : ""}" onclick="selectFolder('${escapeAttr(ROOT_FOLDER_LABEL)}')"><span>${ROOT_FOLDER_LABEL}</span><b>U</b><span class="folder-count">${unfiledCount}</span></button>`] : [])
         .concat(tree.map(node => renderFolderNode(node, 0)));
@@ -2301,7 +2409,7 @@
     function buildFolderTree() {
       const root = [];
       const byPath = {};
-      folders.forEach(path => {
+      visibleFolders().forEach(path => {
         const normalizedPath = normalizeFolderPath(path);
         if (!normalizedPath) return;
         const parts = normalizedPath.split("/");
@@ -2336,12 +2444,16 @@
 
     function selectFolder(folder) {
       selectedFolder = folder === ROOT_FOLDER_LABEL ? ROOT_FOLDER_LABEL : normalizeFolderPath(folder);
+      if (selectedFolder && selectedFolder !== ROOT_FOLDER_LABEL && !canAccessFolder(selectedFolder)) {
+        selectedFolder = "";
+        toast("This folder is outside your access.");
+      }
       document.getElementById("viewTitle").textContent = selectedFolder || "All Documents";
       setView("vault");
     }
 
     function renderUploadFolders() {
-      const options = folders.map(folder => `<option value="${escapeHtml(folder)}">${escapeHtml(folder)}</option>`).join("");
+      const options = visibleFolders().map(folder => `<option value="${escapeHtml(folder)}">${escapeHtml(folder)}</option>`).join("");
       document.getElementById("uploadFolder").innerHTML = options;
       document.getElementById("folderParent").innerHTML = '<option value="">Root folder</option>' + options;
     }
@@ -2359,15 +2471,16 @@
       if (thisWeek > 0) document.querySelector("#stats .stat:nth-child(1) .stat-label").textContent = thisWeek + " added this week";
     }
 
-    function getVisibleDocs() {
+    function getVisibleDocs(skipSelectedFolder = false) {
       const q = document.getElementById("searchInput").value.toLowerCase().trim();
       const type = document.getElementById("typeFilter").value;
       const sort = document.getElementById("sortFilter").value;
       let list = docs.filter(doc => {
         const folderName = displayFolderName(doc.folder);
+        if (!canAccessFolder(folderName)) return false;
         const haystack = [doc.name, folderName, doc.desc, (doc.tags || []).join(" "), doc.uploadedBy].join(" ").toLowerCase();
-        if (selectedFolder === ROOT_FOLDER_LABEL && folderName !== ROOT_FOLDER_LABEL) return false;
-        if (selectedFolder && selectedFolder !== ROOT_FOLDER_LABEL && folderName !== selectedFolder && !folderName.startsWith(selectedFolder + "/")) return false;
+        if (!skipSelectedFolder && selectedFolder === ROOT_FOLDER_LABEL && folderName !== ROOT_FOLDER_LABEL) return false;
+        if (!skipSelectedFolder && selectedFolder && selectedFolder !== ROOT_FOLDER_LABEL && folderName !== selectedFolder && !folderName.startsWith(selectedFolder + "/")) return false;
         if (q && !haystack.includes(q)) return false;
         if (type && getKind(doc) !== type) return false;
         return true;
@@ -2395,10 +2508,14 @@
       }, {});
       document.getElementById("docGrid").innerHTML = Object.entries(grouped).map(([folder, items]) => {
         const folded = foldedSections[folder] === true;
+        const canManage = folder !== ROOT_FOLDER_LABEL && canManageFolderPath(folder);
         return `<section class="folder-section">
           <div class="folder-section-head">
             <div><div class="folder-section-title">${escapeHtml(folder || ROOT_FOLDER_LABEL)}</div><div class="meta">${items.length} document(s)</div></div>
-            <button class="btn ghost small" onclick="toggleFolderSection('${escapeAttr(folder)}')">${folded ? "Open" : "Fold"}</button>
+            <div class="folder-section-tools">
+              ${canManage ? `<button class="btn ghost small" onclick="renameFolder('${escapeAttr(folder)}')">Rename</button><button class="btn ghost small" onclick="openMoveModal('folder', '${escapeAttr(folder)}')">Move</button><button class="btn red small" onclick="deleteFolder('${escapeAttr(folder)}')">Delete</button>` : ""}
+              <button class="btn ghost small" onclick="toggleFolderSection('${escapeAttr(folder)}')">${folded ? "Open" : "Fold"}</button>
+            </div>
           </div>
           ${folded ? "" : `<div class="folder-docs">${items.map(docCard).join("")}</div>`}
         </section>`;
@@ -2422,6 +2539,7 @@
           <button class="btn ghost small" onclick="downloadDoc('${doc.id}')">Open</button>
           <button class="btn orange small" onclick="downloadDoc('${doc.id}', true)">Download</button>
           <button class="btn green small" onclick="openWhatsApp('${doc.id}')">WhatsApp</button>
+          <button class="btn ghost small" onclick="openMoveModal('file', '${doc.id}')">Move</button>
           <button class="btn ghost small" onclick="renameDoc('${doc.id}')">Rename</button>
           <button class="btn red small" onclick="moveToTrash('${doc.id}')">Trash</button>
         </div>
@@ -2445,8 +2563,10 @@
     }
 
     function renderUsers() {
-      document.getElementById("userAccess").innerHTML = '<option>All folders</option>' + folders.map(folder => `<option>${escapeHtml(folder)}</option>`).join("");
-      document.getElementById("usersTable").innerHTML = `<thead><tr><th>User</th><th>Email</th><th>Role</th><th>Access</th><th>Permissions</th><th>Actions</th></tr></thead><tbody>${users.map(user => `<tr>
+      const profile = activeUserProfile();
+      const allowedFolderOptions = visibleFolders(profile).map(folder => `<option>${escapeHtml(folder)}</option>`).join("");
+      document.getElementById("userAccess").innerHTML = (isSuperAdminUser(profile) ? '<option>All folders</option>' : "") + allowedFolderOptions;
+      const rows = visibleUsers(profile).map(user => `<tr>
         <td>${escapeHtml(user.name)} ${user.active ? "" : '<span class="chip">disabled</span>'}</td>
         <td>${escapeHtml(user.email)}</td>
         <td><span class="chip">${escapeHtml(roleLabel(user.role))}</span></td>
@@ -2457,7 +2577,8 @@
           <button class="btn ghost small" onclick="toggleUser('${user.id}')">${user.active ? "Disable" : "Enable"}</button>
           <button class="btn red small" onclick="deleteUser('${user.id}')">Delete</button>
         </div></td>
-      </tr>`).join("")}</tbody>`;
+      </tr>`).join("");
+      document.getElementById("usersTable").innerHTML = `<thead><tr><th>User</th><th>Email</th><th>Role</th><th>Access</th><th>Permissions</th><th>Actions</th></tr></thead><tbody>${rows || '<tr><td colspan="6">No users in your folder scope.</td></tr>'}</tbody>`;
     }
 
     function permissionSummary(user) {
@@ -2489,6 +2610,10 @@
         return;
       }
       const folder = normalizeFolderPath(document.getElementById("uploadFolder").value || folders[0]) || ROOT_FOLDER_LABEL;
+      if (!canManageFolderPath(folder)) {
+        toast("You can upload only inside your own folder access.");
+        return;
+      }
       const tags = document.getElementById("uploadTags").value.split(",").map(tag => tag.trim()).filter(Boolean);
       const desc = document.getElementById("uploadDesc").value.trim();
       let link = document.getElementById("uploadLink").value.trim();
@@ -2580,7 +2705,10 @@
       }
       if (!(await requireVaultPin("Move document to trash"))) return;
       const doc = docs.find(item => item.id === id);
-      if (!doc) return;
+      if (!doc || !canManageFolderPath(doc.folder)) {
+        toast("Delete blocked for this folder.");
+        return;
+      }
       docs = docs.filter(item => item.id !== id);
       trash.unshift({ ...doc, deletedAt: Date.now() });
       addActivity("Moved to trash", doc.name);
@@ -2607,6 +2735,10 @@
       }
       if (!(await requireVaultPin("Permanently delete document"))) return;
       const doc = trash.find(item => item.id === id);
+      if (doc && !canManageFolderPath(doc.folder)) {
+        toast("Delete blocked for this folder.");
+        return;
+      }
       trash = trash.filter(item => item.id !== id);
       addActivity("Permanently deleted", doc ? doc.name : "Document");
       save();
@@ -2620,7 +2752,10 @@
         return;
       }
       const doc = docs.find(item => item.id === id);
-      if (!doc) return;
+      if (!doc || !canManageFolderPath(doc.folder)) {
+        toast("Rename blocked for this folder.");
+        return;
+      }
       const next = prompt("Rename document", doc.name);
       if (!next || next === doc.name) return;
       addActivity("Renamed", doc.name + " to " + next);
@@ -2635,7 +2770,10 @@
         return;
       }
       const doc = docs.find(item => item.id === id);
-      if (!doc) return;
+      if (!doc || !canAccessFolder(doc.folder)) {
+        toast("This file is outside your access.");
+        return;
+      }
       addActivity(forceDownload ? "Downloaded" : "Opened", doc.name);
       save();
       render();
@@ -2672,7 +2810,10 @@
         return;
       }
       const doc = docs.find(item => item.id === id);
-      if (!doc) return;
+      if (!doc || !canAccessFolder(doc.folder)) {
+        toast("This file is outside your access.");
+        return;
+      }
       document.getElementById("shareDocId").value = id;
       document.getElementById("waPhone").value = "";
       const linkText = `Download / view link: ${documentShareLink(doc)}`;
@@ -2771,6 +2912,185 @@
       });
     }
 
+    function renamePathEverywhere(fromPath, toPath) {
+      folders = normalizeFolders(folders.map(folder => folder === fromPath || folder.startsWith(fromPath + "/")
+        ? toPath + folder.slice(fromPath.length)
+        : folder));
+      docs = normalizeDocs(docs.map(doc => ({
+        ...doc,
+        folder: doc.folder === fromPath || String(doc.folder || "").startsWith(fromPath + "/")
+          ? toPath + String(doc.folder || "").slice(fromPath.length)
+          : doc.folder
+      })));
+      trash = trash.map(doc => ({
+        ...doc,
+        folder: doc.folder === fromPath || String(doc.folder || "").startsWith(fromPath + "/")
+          ? toPath + String(doc.folder || "").slice(fromPath.length)
+          : doc.folder
+      }));
+      users = users.map(user => {
+        const access = normalizeFolderPath(user.access);
+        if (!access || isAllFoldersAccess(user.access)) return user;
+        if (access === fromPath || access.startsWith(fromPath + "/")) {
+          return { ...user, access: toPath + access.slice(fromPath.length) };
+        }
+        return user;
+      });
+      Object.keys(foldedSections).forEach(key => {
+        const nextKey = key.startsWith("tree:") ? "tree:" : "";
+        const value = foldedSections[key];
+        const cleanKey = key.replace(/^tree:/, "");
+        if (cleanKey === fromPath || cleanKey.startsWith(fromPath + "/")) {
+          delete foldedSections[key];
+          foldedSections[nextKey + (toPath + cleanKey.slice(fromPath.length))] = value;
+        }
+      });
+      if (selectedFolder === fromPath || selectedFolder.startsWith(fromPath + "/")) {
+        selectedFolder = toPath + selectedFolder.slice(fromPath.length);
+      }
+    }
+
+    function renameFolder(path = selectedFolder) {
+      if (!path || path === ROOT_FOLDER_LABEL) return;
+      if (!canManageFolderPath(path)) {
+        toast("Folder rename is blocked for this user.");
+        return;
+      }
+      const parts = path.split("/");
+      const currentName = parts[parts.length - 1];
+      const nextName = prompt("Rename folder", currentName);
+      const cleanName = String(nextName || "").trim().replace(/\//g, " ").replace(/\s+/g, " ");
+      if (!cleanName || cleanName === currentName) return;
+      const parent = parts.slice(0, -1).join("/");
+      const nextPath = normalizeFolderPath(parent ? parent + "/" + cleanName : cleanName);
+      if (!nextPath || nextPath === path) return;
+      if (folders.includes(nextPath)) {
+        toast("A folder with this name already exists.");
+        return;
+      }
+      renamePathEverywhere(path, nextPath);
+      expandFolderPathInTree(nextPath);
+      addActivity("Folder renamed", `${path} to ${nextPath}`);
+      save();
+      render();
+      toast("Folder renamed.");
+    }
+
+    function deleteFolder(path = selectedFolder) {
+      if (!path || path === ROOT_FOLDER_LABEL) return;
+      if (!canManageFolderPath(path)) {
+        toast("Folder delete is blocked for this user.");
+        return;
+      }
+      const hasDocs = docs.some(doc => {
+        const folder = normalizeFolderPath(doc.folder);
+        return folder === path || folder.startsWith(path + "/");
+      });
+      if (hasDocs) {
+        toast("Cannot delete folder because it contains files.");
+        return;
+      }
+      const hasChildren = folders.some(folder => folder !== path && folder.startsWith(path + "/"));
+      if (hasChildren) {
+        toast("Cannot delete folder because it contains subfolders.");
+        return;
+      }
+      const assignedUsers = users.some(user => normalizeFolderPath(user.access) === path);
+      if (assignedUsers) {
+        toast("Cannot delete folder because it is assigned to users.");
+        return;
+      }
+      folders = folders.filter(folder => folder !== path);
+      delete foldedSections[path];
+      delete foldedSections["tree:" + path];
+      if (selectedFolder === path) selectedFolder = "";
+      addActivity("Folder deleted", path);
+      save();
+      render();
+      toast("Folder deleted.");
+    }
+
+    function openMoveModal(type, id) {
+      const profile = activeUserProfile();
+      const status = document.getElementById("moveStatus");
+      const select = document.getElementById("moveTargetFolder");
+      const title = document.getElementById("moveModalTitle");
+      const nameInput = document.getElementById("moveItemName");
+      const hiddenType = document.getElementById("moveItemType");
+      const hiddenId = document.getElementById("moveItemId");
+
+      hiddenType.value = type;
+      hiddenId.value = id;
+
+      if (type === "file") {
+        const doc = docs.find(item => item.id === id);
+        if (!doc || !canAccessFolder(doc.folder) || !hasPermission("editDocuments")) {
+          toast("File move is blocked for this user.");
+          return;
+        }
+        title.textContent = "Move file";
+        nameInput.value = doc.name;
+        const options = visibleFolders(profile)
+          .filter(folder => canManageFolderPath(folder, profile))
+          .map(folder => `<option value="${escapeHtml(folder)}" ${normalizeFolderPath(doc.folder) === folder ? "selected" : ""}>${escapeHtml(folder)}</option>`)
+          .join("");
+        select.innerHTML = options;
+        status.textContent = "Choose the destination folder for this file.";
+      } else {
+        if (!id || !canManageFolderPath(id, profile)) {
+          toast("Folder move is blocked for this user.");
+          return;
+        }
+        const currentParent = id.includes("/") ? id.split("/").slice(0, -1).join("/") : "";
+        const currentName = id.split("/").pop();
+        title.textContent = "Move folder";
+        nameInput.value = id;
+        const options = [!accessScope(profile) ? '<option value="">Root folder</option>' : ""]
+          .concat(visibleFolders(profile)
+            .filter(folder => folder !== id && !folder.startsWith(id + "/") && canManageFolderPath(folder, profile))
+            .map(folder => `<option value="${escapeHtml(folder)}" ${currentParent === folder ? "selected" : ""}>${escapeHtml(folder)}</option>`))
+          .join("");
+        select.innerHTML = options;
+        status.textContent = `Choose the destination parent folder for ${currentName}.`;
+      }
+
+      openModal("moveModal");
+    }
+
+    function moveFolder(path, targetParent) {
+      const currentName = path.split("/").pop();
+      const nextPath = normalizeFolderPath(targetParent ? targetParent + "/" + currentName : currentName);
+      if (!nextPath || nextPath === path) return;
+      if (!canManageFolderPath(nextPath)) {
+        throw new Error("You can move folders only inside your own access.");
+      }
+      if (folders.includes(nextPath)) {
+        throw new Error("A folder with this name already exists in that location.");
+      }
+      renamePathEverywhere(path, nextPath);
+      expandFolderPathInTree(nextPath);
+      addActivity("Folder moved", `${path} to ${nextPath}`);
+      save();
+      render();
+      toast("Folder moved.");
+    }
+
+    function moveDoc(id, targetFolder) {
+      const doc = docs.find(item => item.id === id);
+      if (!doc) throw new Error("File not found.");
+      const cleanTarget = normalizeFolderPath(targetFolder) || ROOT_FOLDER_LABEL;
+      if (!canManageFolderPath(cleanTarget) || !hasPermission("editDocuments")) {
+        throw new Error("File move is blocked for this user.");
+      }
+      if (normalizeFolderPath(doc.folder) === cleanTarget) return;
+      doc.folder = cleanTarget;
+      syncMissingFoldersFromDocs();
+      addActivity("File moved", `${doc.name} to ${cleanTarget}`);
+      save();
+      render();
+      toast("File moved.");
+    }
+
     function toggleFolderSection(folder) {
       foldedSections[folder] = foldedSections[folder] !== true;
       save();
@@ -2793,6 +3113,10 @@
       const cleanName = normalizeFolderPath(name.trim().replace(/\s+/g, " "));
       const clean = normalizeFolderPath(parent ? parent + "/" + cleanName : cleanName);
       if (!clean) return;
+      if (!canManageFolderPath(parent || clean)) {
+        toast("You can create folders only inside your own folder access.");
+        return;
+      }
       if (folders.includes(clean)) {
         toast("Folder already exists.");
         return;
@@ -2862,6 +3186,10 @@
         return;
       }
       const user = users.find(item => item.id === id);
+      if (id && !visibleUsers().some(item => item.id === id)) {
+        toast("This user is outside your access scope.");
+        return;
+      }
       if (user && isSuperAdminUser(user) && !isSuperAdminUser()) {
         toast("Only Super Admin can edit Super Admin users.");
         return;
@@ -2873,7 +3201,7 @@
       document.getElementById("userEmail").value = user?.email || "";
       document.getElementById("userUid").value = user?.uid || "";
       document.getElementById("userRole").value = user?.role || "employee";
-      document.getElementById("userAccess").value = user?.access || "All folders";
+      document.getElementById("userAccess").value = user?.access || (isSuperAdminUser() ? "All folders" : accessScope() || visibleFolders()[0] || "");
       document.getElementById("userCanWhatsapp").value = user?.canWhatsapp === false ? "no" : "yes";
       document.getElementById("userCanCompany").value = user?.canCompany === true ? "yes" : "no";
       const permissions = mergedPermissions(user || { role: "employee", permissions: null });
@@ -2908,9 +3236,15 @@
       if (!name || !email) return;
       const id = document.getElementById("editingUserId").value || "u-" + Date.now().toString(36);
       const selectedRole = document.getElementById("userRole").value;
+      const selectedAccess = document.getElementById("userAccess").value;
+      const actor = activeUserProfile();
       const existingUser = users.find(user => user.id === id);
-      if ((selectedRole === "superadmin" || isSuperAdminUser(existingUser)) && !isSuperAdminUser()) {
+      if ((selectedRole === "superadmin" || isSuperAdminUser(existingUser)) && !isSuperAdminUser(actor)) {
         toast("Only Super Admin can assign or edit Super Admin access.");
+        return;
+      }
+      if (!isSuperAdminUser(actor) && (!selectedAccess || !canManageFolderPath(selectedAccess, actor))) {
+        toast("You can assign only folders inside your own access.");
         return;
       }
       const payload = {
@@ -2919,7 +3253,7 @@
         name,
         email,
         role: selectedRole,
-        access: document.getElementById("userAccess").value,
+        access: isSuperAdminUser(actor) ? (selectedAccess || "All folders") : selectedAccess,
         active: true,
         canWhatsapp: document.getElementById("userCanWhatsapp").value === "yes",
         canCompany: selectedRole === "superadmin" && document.getElementById("userCanCompany").value === "yes",
@@ -2943,6 +3277,10 @@
         toast("User management blocked for this user.");
         return;
       }
+      if (!visibleUsers().some(item => item.id === id)) {
+        toast("This user is outside your access scope.");
+        return;
+      }
       const user = users.find(item => item.id === id);
       if (!user) return;
       if (isSuperAdminUser(user) && !isSuperAdminUser()) {
@@ -2958,6 +3296,10 @@
     function deleteUser(id) {
       if (!hasPermission("manageUsers")) {
         toast("User management blocked for this user.");
+        return;
+      }
+      if (!visibleUsers().some(item => item.id === id)) {
+        toast("This user is outside your access scope.");
         return;
       }
       const user = users.find(item => item.id === id);
@@ -3139,6 +3481,20 @@
     document.getElementById("folderForm").addEventListener("submit", event => {
       event.preventDefault();
       createFolder(document.getElementById("folderName").value);
+    });
+    document.getElementById("moveForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const type = document.getElementById("moveItemType").value;
+      const id = document.getElementById("moveItemId").value;
+      const target = document.getElementById("moveTargetFolder").value;
+      const status = document.getElementById("moveStatus");
+      try {
+        if (type === "folder") moveFolder(id, target);
+        else moveDoc(id, target);
+        closeModal("moveModal");
+      } catch (error) {
+        status.textContent = error.message || "Move failed.";
+      }
     });
     document.getElementById("companyForm").addEventListener("submit", event => {
       event.preventDefault();
