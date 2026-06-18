@@ -318,6 +318,7 @@
       top: 0;
       z-index: 20;
     }
+    .mobile-menu-btn { display: none; }
     .search { flex: 1; max-width: 520px; position: relative; }
     .search input {
       width: 100%;
@@ -804,17 +805,62 @@
       font-weight: 800;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .side-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .35);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+      z-index: 55;
+    }
+    .app.side-open .side-overlay {
+      opacity: 1;
+      pointer-events: auto;
+    }
 
     @media (max-width: 980px) {
       .auth-shell { grid-template-columns: 1fr; }
       .auth-intro { min-height: 320px; }
       .auth-card { width: 100%; }
       .app { grid-template-columns: 1fr; }
-      .side { position: static; flex-direction: row; overflow-x: auto; align-items: center; }
+      .side {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: min(84vw, 330px);
+        z-index: 60;
+        overflow-y: auto;
+        transform: translateX(-105%);
+        transition: transform .22s ease;
+        box-shadow: 0 24px 54px rgba(15, 23, 42, .22);
+      }
+      .app.side-open .side { transform: translateX(0); }
       .app.folded { grid-template-columns: 1fr; }
-      .nav { display: flex; align-items: center; }
-      .nav-label, .side-note { display: none; }
+      .nav { display: grid; align-items: stretch; }
+      .nav-label, .side-note { display: block; }
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .top {
+        padding: 12px 14px;
+        gap: 10px;
+      }
+      .mobile-menu-btn { display: inline-flex; align-items: center; justify-content: center; }
+      #foldBtn { display: none; }
+      .company-select,
+      .status-chip,
+      .search { width: 100%; max-width: none; }
+      .toolbar { align-items: stretch; }
+      .toolbar strong,
+      .toolbar-actions,
+      .toolbar select,
+      .toolbar input,
+      .toolbar .btn { width: 100%; }
+      .toolbar-actions { display: grid; }
+      .vault-grid,
+      .folder-docs { grid-template-columns: 1fr; }
+      .manager-head { flex-direction: column; align-items: stretch; }
+      .table { display: block; overflow-x: auto; }
     }
     @media (max-width: 680px) {
       .top { flex-wrap: wrap; padding: 14px; }
@@ -823,6 +869,19 @@
       .stats, .grid-2, .auth-metrics, .file-inputs { grid-template-columns: 1fr; }
       .toolbar select, .toolbar input { width: 100%; }
       .hero { min-height: 260px; padding: 22px; }
+      .hero h1 { font-size: 32px; }
+      .hero-actions,
+      .auth-actions,
+      .modal-foot { display: grid; grid-template-columns: 1fr; }
+      .doc-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .user { display: none; }
+      .folder-line { align-items: stretch; }
+      .folder-btn { min-height: 46px; }
+      .modal {
+        width: min(100% - 20px, 520px);
+        max-height: 88vh;
+        overflow-y: auto;
+      }
     }
   </style>
 </head>
@@ -875,6 +934,7 @@
   </section>
 
   <div class="app hidden" id="appShell">
+    <div class="side-overlay" id="sideOverlay"></div>
     <aside class="side">
       <div class="brand">
         <div class="brand-mark">V</div>
@@ -911,6 +971,7 @@
 
     <main class="main">
       <header class="top">
+        <button class="btn ghost small mobile-menu-btn" id="mobileMenuBtn" type="button">Menu</button>
         <button class="btn ghost small" id="foldBtn">Fold</button>
         <select class="company-select" id="companySelect"></select>
         <span class="status-chip" id="firebaseStatusChip">Firebase: checking</span>
@@ -1175,6 +1236,31 @@
       <div class="modal-foot">
         <button class="btn ghost" type="button" data-close="moveModal">Cancel</button>
         <button class="btn" type="submit">Move</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="securityPromptModal">
+    <form class="modal" id="securityPromptForm">
+      <div class="modal-head">
+        <h2 id="securityPromptTitle">Secure action</h2>
+        <button class="close" type="button" data-close="securityPromptModal">&times;</button>
+      </div>
+      <div class="form">
+        <div class="auth-status" id="securityPromptText">Enter your password and PIN to continue.</div>
+        <div class="field">
+          <label>Password</label>
+          <input id="securityPromptPassword" type="password" placeholder="Enter password" autocomplete="current-password" />
+        </div>
+        <div class="field">
+          <label>PIN</label>
+          <input id="securityPromptPin" type="password" inputmode="numeric" maxlength="6" placeholder="Enter PIN" autocomplete="one-time-code" />
+        </div>
+        <div class="auth-status" id="securityPromptStatus">Your password is hidden while typing.</div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn ghost" type="button" data-close="securityPromptModal">Cancel</button>
+        <button class="btn" type="submit">Continue</button>
       </div>
     </form>
   </div>
@@ -1444,6 +1530,7 @@
     let autoLogoutTimer = null;
     let autoLogoutEventsBound = false;
     let pinOtpState = { email: "", code: "", expiresAt: 0, channel: "email" };
+    let securityPromptResolver = null;
 
     initFirebase();
     loadCompanyState(selectedCompanyId);
@@ -2416,6 +2503,7 @@
         document.getElementById(name + "View").classList.toggle("hidden", name !== view);
       });
       document.querySelectorAll(".nav button[data-view]").forEach(btn => btn.classList.toggle("active", btn.dataset.view === view));
+      closeMobileNav();
       render();
     }
 
@@ -2534,6 +2622,7 @@
         toast("This folder is outside your access.");
       }
       document.getElementById("viewTitle").textContent = selectedFolder || "All Documents";
+      closeMobileNav();
       setView("vault");
     }
 
@@ -2688,7 +2777,34 @@
     }
 
     function openModal(id) { document.getElementById(id).classList.remove("hidden"); }
-    function closeModal(id) { document.getElementById(id).classList.add("hidden"); }
+    function closeModal(id) {
+      document.getElementById(id).classList.add("hidden");
+      if (id === "securityPromptModal" && securityPromptResolver) {
+        securityPromptResolver(null);
+        securityPromptResolver = null;
+      }
+    }
+
+    function openMobileNav() {
+      document.getElementById("appShell").classList.add("side-open");
+    }
+
+    function closeMobileNav() {
+      document.getElementById("appShell").classList.remove("side-open");
+    }
+
+    async function requestVaultCredentials(action) {
+      document.getElementById("securityPromptTitle").textContent = action;
+      document.getElementById("securityPromptText").textContent = "Enter your password and PIN to continue.";
+      document.getElementById("securityPromptPassword").value = "";
+      document.getElementById("securityPromptPin").value = "";
+      document.getElementById("securityPromptStatus").textContent = "Your password is hidden while typing.";
+      openModal("securityPromptModal");
+      setTimeout(() => document.getElementById("securityPromptPassword").focus(), 30);
+      return await new Promise(resolve => {
+        securityPromptResolver = resolve;
+      });
+    }
 
     async function addFiles(files) {
       if (!hasPermission("upload")) {
@@ -2771,8 +2887,12 @@
     }
 
     async function requireVaultPin(action) {
-      const password = prompt(action + "\nEnter password:");
-      const pin = prompt(action + "\nEnter PIN:");
+      const credentials = await requestVaultCredentials(action);
+      if (!credentials) {
+        toast("Action cancelled.");
+        return false;
+      }
+      const { password, pin } = credentials;
       const passwordOk = firebaseReady ? password === sessionPassword : password === "Kasera@123";
       const pinOk = await verifyVaultPin(pin, currentUser?.email);
       if (!passwordOk || !pinOk) {
@@ -3570,6 +3690,8 @@
     document.getElementById("folderToggleBtn").addEventListener("click", toggleFolders);
     document.getElementById("companySelect").addEventListener("change", event => switchCompany(event.target.value));
     document.getElementById("foldBtn").addEventListener("click", toggleFold);
+    document.getElementById("mobileMenuBtn").addEventListener("click", openMobileNav);
+    document.getElementById("sideOverlay").addEventListener("click", closeMobileNav);
     document.getElementById("lockBtn").addEventListener("click", lockVault);
     document.getElementById("logoutBtn").addEventListener("click", () => logoutVault("Manual logout."));
     document.getElementById("lockFromSecurity").addEventListener("click", lockVault);
@@ -3616,6 +3738,16 @@
       event.preventDefault();
       unlockVault(document.getElementById("lockPassword").value, document.getElementById("pinInput").value)
         .catch(error => toast(error.message || "Unlock failed."));
+    });
+    document.getElementById("securityPromptForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const password = document.getElementById("securityPromptPassword").value;
+      const pin = document.getElementById("securityPromptPin").value;
+      document.getElementById("securityPromptModal").classList.add("hidden");
+      if (securityPromptResolver) {
+        securityPromptResolver({ password, pin });
+        securityPromptResolver = null;
+      }
     });
     document.querySelectorAll("[data-secure]").forEach(button => {
       button.addEventListener("click", () => {
