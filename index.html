@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -193,7 +194,7 @@
       background: var(--line);
     }
 
-    .app { min-height: 100vh; display: grid; grid-template-columns: 260px minmax(0, 1fr); transition: grid-template-columns .2s ease; }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 280px minmax(0, 1fr); transition: grid-template-columns .2s ease; }
     .app.folded { grid-template-columns: 78px minmax(0, 1fr); }
     .side {
       background: linear-gradient(180deg, #f0f8ff, #ffffff);
@@ -215,8 +216,8 @@
       place-items: center;
       font-weight: 850;
     }
-    .brand-title { font-weight: 850; font-size: 16px; }
-    .brand-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .brand-title { font-weight: 850; font-size: 18px; }
+    .brand-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
     .app.folded .brand > div:last-child,
     .app.folded .nav-label,
     .app.folded .folder-count,
@@ -230,7 +231,7 @@
     .nav-label {
       margin: 12px 8px 6px;
       color: #6b7d95;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 850;
       letter-spacing: .08em;
       text-transform: uppercase;
@@ -258,7 +259,7 @@
       width: 100%;
       text-align: left;
       border-radius: 14px;
-      padding: 12px 14px;
+      padding: 13px 15px;
       background: transparent;
       color: #3f4f64;
       font-weight: 700;
@@ -273,7 +274,7 @@
     }
     .folder-count {
       color: #73849b;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 800;
     }
     .folder-tree { display: grid; gap: 3px; }
@@ -356,9 +357,9 @@
     }
     .btn.red { background: var(--red); box-shadow: none; }
     .btn.green { background: var(--green); box-shadow: 0 10px 20px rgba(15,157,110,.18); }
-    .btn.small { padding: 8px 12px; font-size: 13px; }
+    .btn.small { padding: 10px 14px; font-size: 14px; }
 
-    .content { padding: 26px; display: grid; gap: 20px; }
+    .content { padding: 30px; display: grid; gap: 22px; }
     .hero {
       min-height: 205px;
       border-radius: 18px;
@@ -374,7 +375,7 @@
       box-shadow: var(--shadow);
     }
     .hero h1 { margin: 0 0 8px; font-size: clamp(28px, 3.6vw, 44px); line-height: 1.04; }
-    .hero p { max-width: 680px; color: #3f5573; line-height: 1.6; margin: 0; }
+    .hero p { max-width: 680px; color: #3f5573; line-height: 1.7; margin: 0; font-size: 15px; }
     .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
 
     .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
@@ -384,7 +385,7 @@
       border-radius: var(--radius);
       padding: 18px;
     }
-    .stat-label { color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-size: 11px; font-weight: 850; }
+    .stat-label { color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-size: 12px; font-weight: 850; }
     .stat-value { font-size: 30px; font-weight: 850; margin-top: 8px; }
 
     .toolbar {
@@ -398,7 +399,7 @@
       gap: 10px;
       box-shadow: 0 1px 2px rgba(21,32,51,.04);
     }
-    .toolbar strong { margin-right: auto; }
+    .toolbar strong { margin-right: auto; font-size: 15px; }
     .toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
     .toolbar-scope {
       padding: 7px 10px;
@@ -436,7 +437,7 @@
       padding: 4px 4px 2px;
     }
     .folder-section-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .folder-section-title { font-weight: 850; }
+    .folder-section-title { font-weight: 850; font-size: 20px; }
     .folder-docs { display: grid; grid-template-columns: repeat(auto-fill, minmax(265px, 1fr)); gap: 12px; }
     .doc-card {
       background: var(--panel);
@@ -469,9 +470,9 @@
       text-transform: uppercase;
       flex: 0 0 auto;
     }
-    .doc-name { font-weight: 850; line-height: 1.35; word-break: break-word; }
-    .doc-desc { color: var(--muted); font-size: 13px; line-height: 1.45; margin: 0; }
-    .meta { display: flex; flex-wrap: wrap; gap: 7px; color: var(--muted); font-size: 12px; }
+    .doc-name { font-weight: 850; line-height: 1.35; word-break: break-word; font-size: 20px; }
+    .doc-desc { color: var(--muted); font-size: 14px; line-height: 1.55; margin: 0; }
+    .meta { display: flex; flex-wrap: wrap; gap: 7px; color: var(--muted); font-size: 13px; }
     .chip {
       display: inline-flex;
       border-radius: 999px;
@@ -1407,7 +1408,7 @@
     const ROOT_FOLDER_LABEL = "Unfiled";
     const sampleDocs = [];
     const storageMigrationVersion = "vault-clean-2026-06-16";
-    const folderMoveCleanupVersion = "vault-folder-move-clean-2026-06-17";
+    const folderMoveCleanupVersion = "vault-folder-move-clean-2026-06-18";
     const legacySeedDocNames = new Set([
       "GST Return April.pdf",
       "Vendor Payment Sheet.xlsx",
@@ -1417,7 +1418,7 @@
     const blockedExtensions = ["exe", "bat", "cmd", "js", "vbs", "msi", "ps1", "scr"];
     const defaultSecuritySettings = { idleLogoutMinutes: 15, maxUploadFiles: 250, maxFileSizeMb: 25 };
 
-    let folders = normalizeFolders(load("vaultFolders", defaultFolders));
+    let folders = normalizeFolders(load("vaultFolders", []));
     let docs = normalizeDocs(load("vaultDocs", []));
     let trash = load("vaultTrash", []);
     let users = load("vaultUsers", defaultUsers);
@@ -1508,14 +1509,14 @@
         const docKey = `vault_${id}_docs`;
         const userKey = `vault_${id}_users`;
         const cleaned = pruneMovedDefaultFolders(
-          load(folderKey, defaultFolders),
+          load(folderKey, []),
           load(docKey, []),
           load(userKey, defaultUsers)
         );
         localStorage.setItem(folderKey, JSON.stringify(normalizeFolders(cleaned)));
       });
       const rootCleaned = pruneMovedDefaultFolders(
-        load("vaultFolders", defaultFolders),
+        load("vaultFolders", []),
         load("vaultDocs", []),
         load("vaultUsers", defaultUsers)
       );
@@ -1552,7 +1553,7 @@
 
     function loadCompanyState(companyId) {
       selectedCompanyId = companyId;
-      folders = normalizeFolders(load(companyKey("folders"), defaultFolders));
+      folders = normalizeFolders(load(companyKey("folders"), []));
       docs = normalizeDocs(load(companyKey("docs"), []));
       trash = load(companyKey("trash"), []);
       users = load(companyKey("users"), defaultUsers);
@@ -2288,11 +2289,18 @@
         const remoteFolders = folderSnap.docs
           .filter(item => item.id !== "__security_settings__" && item.data().kind !== "security_settings")
           .map(item => item.data().path || item.id);
-        folders = remoteFolders.length ? normalizeFolders(remoteFolders) : normalizeFolders(defaultFolders);
         const remoteDocs = docSnap.docs.map((item, index) => {
           const data = item.data();
           return normalizeDocRecord({ id: item.id, ...data, uploadedBy: data.uploadedByName || data.uploadedByEmail || data.uploadedBy || "User" }, index);
         });
+        let remoteUsers = users;
+        if (userSnap && !userSnap.empty) {
+          remoteUsers = userSnap.docs.map(item => {
+            const data = item.data();
+            return { id: item.id, active: data.active !== false, permissions: data.permissions || null, access: data.access || "All folders", canWhatsapp: data.canWhatsapp !== false, canCompany: data.canCompany === true, ...data };
+          }).filter(user => !user.companies || user.companies.includes(selectedCompanyId) || user.role === "superadmin");
+        }
+        folders = normalizeFolders(pruneMovedDefaultFolders(remoteFolders, remoteDocs, remoteUsers));
         docs = remoteDocs;
         syncMissingFoldersFromDocs();
         trash = trashSnap.docs.map(item => ({ id: item.id, ...item.data() }));
@@ -2300,12 +2308,7 @@
           const data = item.data();
           return { action: data.action, detail: data.targetName || data.detail || "", at: data.timestamp || Date.now(), user: data.performedByName || data.user || "User" };
         });
-        if (userSnap && !userSnap.empty) {
-          users = userSnap.docs.map(item => {
-            const data = item.data();
-            return { id: item.id, active: data.active !== false, permissions: data.permissions || null, access: data.access || "All folders", canWhatsapp: data.canWhatsapp !== false, canCompany: data.canCompany === true, ...data };
-          }).filter(user => !user.companies || user.companies.includes(selectedCompanyId) || user.role === "superadmin");
-        }
+        users = remoteUsers;
         whatsappLogs = activity.filter(item => String(item.action || "").toLowerCase().includes("whatsapp")).map(item => ({ at: item.at, phone: item.detail, documentName: item.detail, status: item.action, user: item.user }));
         setFirebaseStatus(`Firebase: ${docs.length} docs, ${folders.length} folders`, true);
       } catch (error) {
@@ -2322,20 +2325,52 @@
       }, 500);
     }
 
+    async function syncFirebaseCollection(collectionRef, items, buildId, buildPayload) {
+      try {
+        const snapshot = await collectionRef.get();
+        const keepIds = new Set(items.map(item => buildId(item)).filter(Boolean));
+        await Promise.all(snapshot.docs.map(doc => {
+          if (keepIds.has(doc.id)) return Promise.resolve();
+          return collectionRef.doc(doc.id).delete().catch(() => {});
+        }));
+      } catch (error) {
+      }
+      await Promise.all(items.map(item => {
+        const id = buildId(item);
+        if (!id) return Promise.resolve();
+        return collectionRef.doc(id).set(buildPayload(item), { merge: true }).catch(() => {});
+      }));
+    }
+
     async function saveFirebaseCollections() {
       const companyRef = firebaseDb.collection("vault_companies").doc(selectedCompanyId);
       await companyRef.set({ name: companyName(), id: selectedCompanyId, securitySettings, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).catch(() => {});
+      await syncFirebaseCollection(
+        companyRef.collection("folders"),
+        folders,
+        path => docId(path),
+        path => ({ path, name: path.split("/").pop(), updatedAt: Date.now() })
+      );
       await companyRef.collection("folders").doc("__security_settings__").set({ kind: "security_settings", securitySettings, updatedAt: Date.now() }, { merge: true }).catch(() => {});
-      await Promise.all(folders.map(path => companyRef.collection("folders").doc(docId(path)).set({ path, name: path.split("/").pop(), updatedAt: Date.now() }, { merge: true }).catch(() => {})));
-      await Promise.all(docs.map(doc => companyRef.collection("documents").doc(doc.id).set({
+      await syncFirebaseCollection(
+        companyRef.collection("documents"),
+        docs,
+        doc => doc.id,
+        doc => ({
         ...doc,
         companyId: selectedCompanyId,
         uploadedBy: doc.uploadedByUid || currentUser.uid,
         uploadedByUid: doc.uploadedByUid || currentUser.uid,
         uploadedByName: doc.uploadedByName || doc.uploadedBy || currentUser.email,
         uploadedByEmail: doc.uploadedByEmail || currentUser.email
-      }, { merge: true }).catch(() => {})));
-      await Promise.all(trash.map(doc => companyRef.collection("vault_trash").doc(doc.id).set(doc, { merge: true }).catch(() => {})));
+      })
+      );
+      await syncFirebaseCollection(
+        companyRef.collection("vault_trash"),
+        trash,
+        doc => doc.id,
+        doc => doc
+      );
       await Promise.all(users.map(user => firebaseDb.collection("vault_users").doc(user.uid || user.id).set({
         ...user,
         role: user.role,
@@ -2597,9 +2632,10 @@
     }
 
     function renderActivity() {
-      document.getElementById("activityList").innerHTML = activity.length ? activity.map(item => `<div class="activity-item">
+      const ordered = activity.slice().sort((a, b) => Number(b.at || 0) - Number(a.at || 0));
+      document.getElementById("activityList").innerHTML = ordered.length ? ordered.map(item => `<div class="activity-item">
         <div class="activity-dot">A</div>
-        <div><div class="activity-title">${escapeHtml(item.action)}</div><div class="activity-meta">${escapeHtml(item.detail)} - ${escapeHtml(item.user)} - ${formatDate(item.at)}</div></div>
+        <div><div class="activity-title">${escapeHtml(item.action)}</div><div class="activity-meta">${escapeHtml(item.detail || "No detail")} - ${escapeHtml(item.user || "System")} - ${formatDate(item.at)}</div></div>
       </div>`).join("") : '<div class="empty">No activity yet.</div>';
     }
 
@@ -3050,6 +3086,7 @@
         toast("Cannot delete folder because it is assigned to users.");
         return;
       }
+      if (!confirm(`Delete folder "${path}"? This cannot be undone from the folder list.`)) return;
       folders = folders.filter(folder => folder !== path);
       delete foldedSections[path];
       delete foldedSections["tree:" + path];
@@ -3171,6 +3208,7 @@
         toast("Folder already exists.");
         return;
       }
+      if (!confirm(`Create folder "${clean}"?`)) return;
       folders.push(clean);
       folders = normalizeFolders(folders);
       foldersFolded = false;
@@ -3206,7 +3244,10 @@
       const name = document.getElementById("companyName").value.trim();
       const code = document.getElementById("companyCode").value.trim().toUpperCase();
       if (!name || !code) return;
+      if (!confirm(`Create company "${name}" now?`)) return;
       const id = code.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now().toString(36);
+      const creatorProfile = activeUserProfile();
+      const creatorCompanies = Array.from(new Set([...(creatorProfile.companies || []), selectedCompanyId, id].filter(Boolean)));
       companies.push({
         id,
         name,
@@ -3216,10 +3257,22 @@
         createdAt: Date.now(),
         createdBy: currentUser?.email || "Kasera User"
       });
-      localStorage.setItem(`vault_${id}_folders`, JSON.stringify(defaultFolders));
+      localStorage.setItem(`vault_${id}_folders`, JSON.stringify([]));
       localStorage.setItem(`vault_${id}_docs`, JSON.stringify([]));
       localStorage.setItem(`vault_${id}_trash`, JSON.stringify([]));
-      localStorage.setItem(`vault_${id}_users`, JSON.stringify(defaultUsers));
+      localStorage.setItem(`vault_${id}_users`, JSON.stringify([{
+        id: currentUser?.uid || creatorProfile.id || `user-${Date.now().toString(36)}`,
+        uid: currentUser?.uid || creatorProfile.uid || "",
+        name: creatorProfile.name || currentUser?.email || "Super Admin",
+        email: currentUser?.email || creatorProfile.email || "",
+        role: "superadmin",
+        access: "All folders",
+        active: true,
+        canWhatsapp: true,
+        canCompany: true,
+        permissions: { ...roleDefaults.superadmin },
+        companies: creatorCompanies
+      }]));
       localStorage.setItem(`vault_${id}_whatsappLogs`, JSON.stringify([]));
       localStorage.setItem(`vault_${id}_activity`, JSON.stringify([{ action: "Company created", detail: name, at: Date.now(), user: currentUser?.email || "Kasera User" }]));
       localStorage.setItem(`vault_${id}_foldedSections`, JSON.stringify({}));
