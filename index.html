@@ -1065,7 +1065,7 @@
         <p>Separate vault for files, folders, WhatsApp sharing, user access, PIN/OTP security and activity logs. Built to feel light like the Task dashboard.</p>
         <div class="auth-metrics">
           <div class="auth-metric"><strong>2FA</strong><span>Password + PIN + OTP</span></div>
-          <div class="auth-metric"><strong>15m</strong><span>Auto logout default</span></div>
+          <div class="auth-metric"><strong>5m</strong><span>Auto logout default</span></div>
           <div class="auth-metric"><strong>Bulk</strong><span>Multi-file upload</span></div>
         </div>
       </div>
@@ -1253,7 +1253,7 @@
             </div>
             <div class="secure-card">
               <div class="secure-title">Auto logout</div>
-              <p class="secure-copy" id="autoLogoutSummary">Default: logout after 15 minutes of no activity.</p>
+              <p class="secure-copy" id="autoLogoutSummary">Default: logout after 5 minutes of no activity.</p>
               <div class="grid-2" style="margin-top:12px">
                 <div class="field">
                   <label>Idle minutes</label>
@@ -1722,6 +1722,7 @@
     const sampleDocs = [];
     const storageMigrationVersion = "vault-clean-2026-06-16";
     const folderMoveCleanupVersion = "vault-folder-move-clean-2026-06-18";
+    const idleLogoutMigrationVersion = "vault-idle-logout-five-minute-2026-06-18";
     const legacySeedDocNames = new Set([
       "GST Return April.pdf",
       "Vendor Payment Sheet.xlsx",
@@ -1729,7 +1730,7 @@
       "Dispatch Challan 1084.pdf"
     ]);
     const blockedExtensions = ["exe", "bat", "cmd", "js", "vbs", "msi", "ps1", "scr"];
-    const defaultSecuritySettings = { idleLogoutMinutes: 15, maxUploadFiles: 250, maxFileSizeMb: 25 };
+    const defaultSecuritySettings = { idleLogoutMinutes: 5, maxUploadFiles: 250, maxFileSizeMb: 25 };
 
     let folders = normalizeFolders(load("vaultFolders", []));
     let docs = normalizeDocs(load("vaultDocs", []));
@@ -1856,9 +1857,27 @@
       }
     }
 
+    function migrateIdleLogoutDefault() {
+      if (localStorage.getItem(idleLogoutMigrationVersion) === "done") return;
+      const updateSettings = key => {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(key) || "null");
+          if (parsed && Number(parsed.idleLogoutMinutes) === 15) {
+            parsed.idleLogoutMinutes = 5;
+            localStorage.setItem(key, JSON.stringify(parsed));
+          }
+        } catch (error) {
+        }
+      };
+      updateSettings("vaultSecuritySettings");
+      companies.forEach(company => updateSettings(`vault_${company.id}_securitySettings`));
+      localStorage.setItem(idleLogoutMigrationVersion, "done");
+    }
+
     cleanLegacySeedData();
     cleanMovedFolderDuplicates();
     cleanStarterCompanies();
+    migrateIdleLogoutDefault();
     loadCompanyState(selectedCompanyId);
 
     function save() {
@@ -2299,8 +2318,73 @@
       return Math.min(max, Math.max(min, Math.round(number)));
     }
 
+    function sessionIdleMinutes() {
+      return clampNumber(securitySettings.idleLogoutMinutes, 1, 240, 5);
+    }
+
+    function sessionExpired(session) {
+      const lastActive = Number(session?.lastActive || 0);
+      return !lastActive || Date.now() - lastActive > sessionIdleMinutes() * 60 * 1000;
+    }
+
+    function saveSessionState() {
+      if (!currentUser) return;
+      sessionStorage.setItem("vaultActiveSession", JSON.stringify({
+        email: currentUser.email,
+        uid: currentUser.uid,
+        password: sessionPassword,
+        companyId: selectedCompanyId,
+        lastActive: Date.now()
+      }));
+    }
+
+    function clearSessionState() {
+      sessionStorage.removeItem("vaultActiveSession");
+    }
+
+    function touchSessionState() {
+      if (!currentUser) return;
+      saveSessionState();
+    }
+
+    async function restoreBrowserSession(firebaseUser = null) {
+      const raw = sessionStorage.getItem("vaultActiveSession");
+      if (!raw) return false;
+      let session = null;
+      try {
+        session = JSON.parse(raw);
+      } catch (error) {
+        clearSessionState();
+        return false;
+      }
+      if (sessionExpired(session)) {
+        clearSessionState();
+        const status = document.getElementById("authStatus");
+        if (status) status.textContent = "Session expired after 5 minutes of no activity.";
+        return false;
+      }
+      currentUser = {
+        email: firebaseUser?.email || session.email,
+        uid: firebaseUser?.uid || session.uid || "local-preview-user"
+      };
+      sessionPassword = session.password || "";
+      if (session.companyId) selectedCompanyId = session.companyId;
+      loadCompanyState(selectedCompanyId);
+      if (firebaseReady && firebaseUser) {
+        await loadCurrentUserProfile();
+        await syncPinFromFirebase();
+        await loadFirebaseVault();
+      }
+      document.getElementById("authView").classList.add("hidden");
+      document.getElementById("appShell").classList.remove("hidden");
+      document.getElementById("lockScreen").classList.add("hidden");
+      document.querySelector(".user").textContent = (currentUser.email || "KI").slice(0, 2).toUpperCase();
+      finishVaultOpen("Session restored after refresh");
+      return true;
+    }
+
     function renderSecuritySettings() {
-      const minutes = clampNumber(securitySettings.idleLogoutMinutes, 1, 240, 15);
+      const minutes = sessionIdleMinutes();
       const maxFiles = clampNumber(securitySettings.maxUploadFiles, 1, 500, 250);
       const maxMb = clampNumber(securitySettings.maxFileSizeMb, 1, 100, 25);
       const canEdit = canControlSecuritySettings();
@@ -2348,7 +2432,7 @@
         return;
       }
       securitySettings = {
-        idleLogoutMinutes: clampNumber(document.getElementById("autoLogoutMinutes").value, 1, 240, 15),
+        idleLogoutMinutes: clampNumber(document.getElementById("autoLogoutMinutes").value, 1, 240, 5),
         maxUploadFiles: clampNumber(document.getElementById("maxUploadFiles").value, 1, 500, 250),
         maxFileSizeMb: clampNumber(document.getElementById("maxFileSizeMb").value, 1, 100, 25)
       };
@@ -2362,7 +2446,8 @@
     function resetAutoLogoutTimer() {
       clearTimeout(autoLogoutTimer);
       if (!currentUser) return;
-      const minutes = clampNumber(securitySettings.idleLogoutMinutes, 1, 240, 15);
+      touchSessionState();
+      const minutes = sessionIdleMinutes();
       autoLogoutTimer = setTimeout(() => {
         logoutVault(`Auto logout after ${minutes} minute(s) of no activity.`);
       }, minutes * 60 * 1000);
@@ -2379,6 +2464,7 @@
     function logoutVault(reason = "Logged out.") {
       if (currentUser) addActivity("Logout", reason);
       clearTimeout(autoLogoutTimer);
+      clearSessionState();
       currentUser = null;
       sessionPassword = "";
       document.getElementById("appShell").classList.add("hidden");
@@ -2454,6 +2540,12 @@
         setFirebaseStatus("Firebase: connected", true);
         const status = document.getElementById("authStatus");
         if (status) status.textContent = "Firebase connected. Login with Google or email/password plus PIN.";
+        firebaseAuth.onAuthStateChanged(user => {
+          if (!user || currentUser) return;
+          restoreBrowserSession(user).catch(() => {
+            clearSessionState();
+          });
+        });
       } catch (error) {
         firebaseReady = false;
         setFirebaseStatus("Firebase: error");
@@ -2549,21 +2641,46 @@
       return document.getElementById("legalConsent").checked === true;
     }
 
+    function accessibleCompaniesForCurrentUser() {
+      const profile = activeUserProfile();
+      if (isSuperAdminUser(profile)) return companies;
+      const companyIds = Array.isArray(profile.companies) && profile.companies.length
+        ? profile.companies
+        : [selectedCompanyId || "kasera-industries"];
+      const allowed = companies.filter(company => companyIds.includes(company.id));
+      return allowed.length ? allowed : companies.filter(company => company.id === "kasera-industries").slice(0, 1);
+    }
+
     function showCompanyGate(loginMessage) {
+      const allowedCompanies = accessibleCompaniesForCurrentUser();
       document.getElementById("authView").classList.add("hidden");
       document.getElementById("appShell").classList.remove("hidden");
       document.querySelector(".user").textContent = (currentUser.email || "KI").slice(0, 2).toUpperCase();
-      document.getElementById("loginCompanySelect").innerHTML = companies.map(company => `<option value="${escapeHtml(company.id)}" ${company.id === selectedCompanyId ? "selected" : ""}>${escapeHtml(company.name)}</option>`).join("");
+      document.getElementById("loginCompanySelect").innerHTML = allowedCompanies.map(company => `<option value="${escapeHtml(company.id)}" ${company.id === selectedCompanyId ? "selected" : ""}>${escapeHtml(company.name)}</option>`).join("");
       window.pendingLoginMessage = loginMessage;
       openModal("companyGateModal");
     }
 
     function openVaultAfterLogin(loginMessage) {
+      const allowedCompanies = accessibleCompaniesForCurrentUser();
+      if (allowedCompanies.length <= 1) {
+        const companyId = allowedCompanies[0]?.id || "kasera-industries";
+        if (companyId !== selectedCompanyId) {
+          loadCompanyState(companyId);
+          localStorage.setItem("vaultSelectedCompanyId", JSON.stringify(selectedCompanyId));
+        }
+        finishVaultOpen(loginMessage);
+        return;
+      }
+      if (!allowedCompanies.some(company => company.id === selectedCompanyId)) {
+        loadCompanyState(allowedCompanies[0].id);
+      }
       showCompanyGate(loginMessage);
     }
 
     function finishVaultOpen(loginMessage) {
       addActivity("Login", loginMessage);
+      saveSessionState();
       bindAutoLogoutEvents();
       resetAutoLogoutTimer();
       render();
@@ -4303,7 +4420,13 @@
       updateUploadSummary(Array.from(event.dataTransfer.files || []));
     });
 
-    render();
+    if (!firebaseReady) {
+      restoreBrowserSession().then(restored => {
+        if (!restored) render();
+      });
+    } else {
+      render();
+    }
     window.addEventListener("hashchange", handleDownloadHash);
   </script>
 </body>
