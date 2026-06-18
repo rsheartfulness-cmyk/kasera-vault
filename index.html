@@ -173,6 +173,20 @@
       justify-content: center;
       margin-top: 12px;
     }
+    .consent-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      margin-top: 12px;
+    }
+    .consent-row input { margin-top: 2px; }
     .divider {
       display: flex;
       align-items: center;
@@ -456,6 +470,28 @@
     }
     .toolbar strong { margin-right: auto; font-size: 14px; }
     .toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .view-toggle, .bulk-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+    .view-toggle button, .bulk-actions button { min-height: 32px; }
+    .view-toggle button.active {
+      background: #0b63ce;
+      color: #fff;
+      border-color: #0b63ce;
+    }
+    .bulk-actions {
+      background: #fff7ed;
+      border-color: #fed7aa;
+      color: #8a3b05;
+      font-weight: 800;
+    }
+    .bulk-actions.hidden { display: none; }
     .toolbar-scope {
       padding: 7px 10px;
       border-radius: 8px;
@@ -512,6 +548,23 @@
     .doc-card.folded-card .doc-head { align-items: center; }
     .doc-card.folded-card .file-type { width: 38px; height: 38px; font-size: 10px; }
     .doc-card.folded-card .doc-name { font-size: 15px; line-height: 1.35; }
+    .doc-card.selected, .doc-row.selected {
+      border-color: #0b63ce;
+      box-shadow: 0 0 0 2px rgba(11, 99, 206, .12);
+    }
+    .doc-check {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      margin-left: auto;
+      cursor: pointer;
+    }
+    .doc-check input { width: 16px; height: 16px; accent-color: #0b63ce; }
     .doc-head { display: flex; align-items: flex-start; gap: 10px; }
     .file-type {
       width: 38px;
@@ -539,6 +592,42 @@
     }
     .doc-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
     .doc-actions button { width: 100%; }
+    .doc-list {
+      display: grid;
+      gap: 8px;
+    }
+    .doc-row {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .doc-row-main {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .doc-row-info { min-width: 0; }
+    .doc-row-title {
+      font-weight: 750;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .doc-row-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 7px;
+    }
+    .doc-row-actions .btn { min-height: 34px; }
     .empty {
       border: 1px dashed var(--line);
       background: #fff;
@@ -920,12 +1009,25 @@
       .toolbar { align-items: stretch; }
       .toolbar strong,
       .toolbar-actions,
+      .view-toggle,
+      .bulk-actions,
       .toolbar select,
       .toolbar input,
       .toolbar .btn { width: 100%; }
       .toolbar-actions { display: grid; }
+      .view-toggle, .bulk-actions { justify-content: stretch; }
+      .view-toggle button, .bulk-actions button { flex: 1; }
       .vault-grid,
       .folder-docs { grid-template-columns: 1fr; }
+      .doc-row {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+      .doc-row-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        justify-content: stretch;
+      }
       .manager-head { flex-direction: column; align-items: stretch; }
       .table { display: block; overflow-x: auto; }
     }
@@ -978,6 +1080,10 @@
         <h1>Secure vault login</h1>
         <p>Password and PIN are required before the vault opens. Firebase login is required in production; local preview is only for testing.</p>
         <button class="google-btn" type="button" id="googleLoginBtn"><span class="google-dot">G</span> Continue with Google</button>
+        <label class="consent-row">
+          <input id="legalConsent" type="checkbox" />
+          <span>I agree to Kasera Vault data, access, audit log and legal usage terms.</span>
+        </label>
         <div class="divider">or</div>
         <button class="btn ghost login-choice" type="button" id="showLoginFieldsBtn">Login with ID / Password</button>
         <div class="auth-status" id="authStatus">Firebase ready after Cloudflare secrets are injected.</div>
@@ -1014,6 +1120,24 @@
       <div class="modal-foot">
         <button class="btn ghost" type="button" data-close="loginDetailsModal">Cancel</button>
         <button class="btn orange" type="submit">Unlock vault</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop hidden" id="companyGateModal">
+    <form class="modal login-modal" id="companyGateForm">
+      <div class="modal-head">
+        <h2>Select company</h2>
+      </div>
+      <div class="form">
+        <div class="field">
+          <label>Company</label>
+          <select id="loginCompanySelect"></select>
+        </div>
+        <div class="auth-status">Company data is loaded separately for the selected company.</div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn orange" type="submit">Continue</button>
       </div>
     </form>
   </div>
@@ -1088,6 +1212,16 @@
         <div class="toolbar">
           <strong id="viewTitle">All Documents</strong>
           <div class="toolbar-actions" id="folderActionBar"></div>
+          <div class="bulk-actions hidden" id="bulkActionBar">
+            <span id="bulkCount">0 selected</span>
+            <button class="btn ghost small" type="button" id="selectVisibleBtn">Select visible</button>
+            <button class="btn ghost small" type="button" id="clearSelectionBtn">Clear</button>
+            <button class="btn red small" type="button" id="bulkTrashBtn">Delete selected</button>
+          </div>
+          <div class="view-toggle" aria-label="Document view">
+            <button class="btn ghost small" type="button" id="cardViewBtn">Cards</button>
+            <button class="btn ghost small" type="button" id="listViewBtn">List</button>
+          </div>
           <button class="btn ghost small" id="collapseCardsBtn">Minimize Cards</button>
           <select id="typeFilter">
             <option value="">All types</option>
@@ -1170,6 +1304,11 @@
               <div class="secure-title">Blocked files</div>
               <p class="secure-copy">Executable files are blocked in the front end before being added to the vault list.</p>
               <div class="switch-row"><span class="chip">exe, bat, cmd, js</span><button class="switch on" type="button" data-secure="files"></button></div>
+            </div>
+            <div class="secure-card">
+              <div class="secure-title">Google Drive backup</div>
+              <p class="secure-copy">Weekly backup is handled by the Vault Apps Script trigger and saved into the Kasera Vault backup folder in Google Drive.</p>
+              <div class="switch-row"><span class="chip">Weekly Drive backup</span><button class="switch on" type="button" data-secure="backup"></button></div>
             </div>
           </div>
         </div>
@@ -1274,7 +1413,7 @@
       </div>
       <div class="modal-foot">
         <button class="btn ghost" type="button" data-close="uploadModal">Cancel</button>
-        <button class="btn" type="submit">Add to vault</button>
+        <button class="btn" type="submit" id="uploadSubmitBtn">Add to vault</button>
       </div>
     </form>
   </div>
@@ -1356,10 +1495,11 @@
   <div class="modal-backdrop hidden" id="companyModal">
     <form class="modal" id="companyForm">
       <div class="modal-head">
-        <h2>Create company</h2>
+        <h2 id="companyModalTitle">Create company</h2>
         <button class="close" type="button" data-close="companyModal">&times;</button>
       </div>
       <div class="form">
+        <input id="editingCompanyId" type="hidden" />
         <div class="grid-2">
           <div class="field">
             <label>Company name</label>
@@ -1381,7 +1521,7 @@
       </div>
       <div class="modal-foot">
         <button class="btn ghost" type="button" data-close="companyModal">Cancel</button>
-        <button class="btn" type="submit">Create</button>
+        <button class="btn" id="companySubmitBtn" type="submit">Create</button>
       </div>
     </form>
   </div>
@@ -1576,8 +1716,7 @@
     };
     const TASK_API_URL = "https://script.google.com/macros/s/AKfycbzqidcT7WDelCIYBskExWhjW4VBpL_pPcxQfgilLB0BnseW5K4sSkhitz_XfZ8iZEAd/exec";
     const defaultCompanies = [
-      { id: "kasera-industries", name: "Kasera Industries", code: "KI", email: "admin@kaseraindustries.in", phone: "91" },
-      { id: "kasera-steel", name: "Kasera Steel", code: "KS", email: "", phone: "" }
+      { id: "kasera-industries", name: "Kasera", code: "KI", email: "admin@kaseraindustries.in", phone: "91" }
     ];
     const ROOT_FOLDER_LABEL = "Unfiled";
     const sampleDocs = [];
@@ -1605,6 +1744,10 @@
     let selectedFolder = "";
     let currentView = "vault";
     let cardsMinimized = load("vaultCardsMinimized", false) === true;
+    let docViewMode = load("vaultDocViewMode", "cards") === "list" ? "list" : "cards";
+    let savedSelectedDocIds = load("vaultSelectedDocIds", []);
+    let selectedDocIds = Array.isArray(savedSelectedDocIds) ? savedSelectedDocIds : [];
+    let uploadInProgress = false;
     let foldersFolded = load("vaultFoldersFolded", false) === true;
     let foldedSections = load("vaultFoldedSections", {});
     let firebaseReady = false;
@@ -1699,8 +1842,23 @@
       localStorage.setItem(folderMoveCleanupVersion, "done");
     }
 
+    function cleanStarterCompanies() {
+      companies = companies.filter(company => {
+        if (company.id !== "kasera-steel") return true;
+        const companyDocs = load(`vault_${company.id}_docs`, []);
+        return Array.isArray(companyDocs) && companyDocs.length > 0;
+      });
+      if (!companies.length) companies = defaultCompanies.slice();
+      localStorage.setItem("vaultCompanies", JSON.stringify(companies));
+      if (!companies.some(company => company.id === selectedCompanyId)) {
+        selectedCompanyId = companies[0].id;
+        localStorage.setItem("vaultSelectedCompanyId", JSON.stringify(selectedCompanyId));
+      }
+    }
+
     cleanLegacySeedData();
     cleanMovedFolderDuplicates();
+    cleanStarterCompanies();
     loadCompanyState(selectedCompanyId);
 
     function save() {
@@ -1718,6 +1876,8 @@
       localStorage.setItem("vaultSecuritySettings", JSON.stringify(securitySettings));
       localStorage.setItem(companyKey("securitySettings"), JSON.stringify(securitySettings));
       localStorage.setItem("vaultCardsMinimized", JSON.stringify(cardsMinimized));
+      localStorage.setItem("vaultDocViewMode", JSON.stringify(docViewMode));
+      localStorage.setItem("vaultSelectedDocIds", JSON.stringify(selectedDocIds));
       localStorage.setItem("vaultFoldersFolded", JSON.stringify(foldersFolded));
       queueFirebaseSave();
     }
@@ -2385,10 +2545,24 @@
       await loadFirebaseVault();
     }
 
-    function openVaultAfterLogin(loginMessage) {
+    function legalConsentAccepted() {
+      return document.getElementById("legalConsent").checked === true;
+    }
+
+    function showCompanyGate(loginMessage) {
       document.getElementById("authView").classList.add("hidden");
       document.getElementById("appShell").classList.remove("hidden");
       document.querySelector(".user").textContent = (currentUser.email || "KI").slice(0, 2).toUpperCase();
+      document.getElementById("loginCompanySelect").innerHTML = companies.map(company => `<option value="${escapeHtml(company.id)}" ${company.id === selectedCompanyId ? "selected" : ""}>${escapeHtml(company.name)}</option>`).join("");
+      window.pendingLoginMessage = loginMessage;
+      openModal("companyGateModal");
+    }
+
+    function openVaultAfterLogin(loginMessage) {
+      showCompanyGate(loginMessage);
+    }
+
+    function finishVaultOpen(loginMessage) {
       addActivity("Login", loginMessage);
       bindAutoLogoutEvents();
       resetAutoLogoutTimer();
@@ -2670,9 +2844,29 @@
     function buildFolderTree() {
       const root = [];
       const byPath = {};
+      const q = document.getElementById("searchInput")?.value.toLowerCase().trim() || "";
+      const matchingFolders = new Set();
+      if (q) {
+        visibleFolders().forEach(path => {
+          const normalizedPath = normalizeFolderPath(path);
+          const hasMatchingDoc = docs.some(doc => {
+            const folderName = displayFolderName(doc.folder);
+            const haystack = [doc.name, folderName, doc.desc, (doc.tags || []).join(" "), doc.uploadedBy].join(" ").toLowerCase();
+            return canAccessFolder(folderName) && (folderName === normalizedPath || folderName.startsWith(normalizedPath + "/")) && haystack.includes(q);
+          });
+          if (normalizedPath.toLowerCase().includes(q) || hasMatchingDoc) {
+            normalizedPath.split("/").reduce((acc, part) => {
+              const next = acc ? acc + "/" + part : part;
+              matchingFolders.add(next);
+              return next;
+            }, "");
+          }
+        });
+      }
       visibleFolders().forEach(path => {
         const normalizedPath = normalizeFolderPath(path);
         if (!normalizedPath) return;
+        if (q && !matchingFolders.has(normalizedPath)) return;
         const parts = normalizedPath.split("/");
         let currentPath = "";
         let level = root;
@@ -2757,7 +2951,10 @@
     }
 
     function renderDocs() {
-      const list = getVisibleDocs();
+      const q = document.getElementById("searchInput").value.toLowerCase().trim();
+      const list = getVisibleDocs(Boolean(q));
+      pruneSelectedDocs();
+      renderBulkActions();
       if (!list.length) {
         document.getElementById("docGrid").innerHTML = '<div class="empty" style="grid-column:1/-1"><strong>No documents found.</strong><br>Upload a file or change the filters.</div>';
         return;
@@ -2779,20 +2976,24 @@
               <button class="btn ghost small" onclick="toggleFolderSection('${escapeAttr(folder)}')">${folded ? "Open" : "Fold"}</button>
             </div>
           </div>
-          ${folded ? "" : `<div class="folder-docs">${items.map(docCard).join("")}</div>`}
+          ${folded ? "" : docViewMode === "list" ? `<div class="doc-list">${items.map(docRow).join("")}</div>` : `<div class="folder-docs">${items.map(docCard).join("")}</div>`}
         </section>`;
       }).join("");
     }
 
     function docCard(doc) {
       const ext = extension(doc.name);
-      return `<article class="doc-card ${cardsMinimized ? "folded-card" : ""}">
+      const selected = selectedDocIds.includes(doc.id);
+      return `<article class="doc-card ${cardsMinimized ? "folded-card" : ""} ${selected ? "selected" : ""}">
         <div class="doc-head">
           <div class="file-type" style="background:${fileColor(ext)}">${escapeHtml(ext || "file")}</div>
           <div>
             <div class="doc-name">${escapeHtml(doc.name)}</div>
             <div class="meta"><span>${escapeHtml(displayFolderName(doc.folder))}</span><span>${formatSize(doc.size)}</span></div>
           </div>
+          <label class="doc-check" title="Select document">
+            <input type="checkbox" ${selected ? "checked" : ""} onchange="toggleDocSelection('${doc.id}', this.checked)" aria-label="Select ${escapeAttr(doc.name)}">
+          </label>
         </div>
         <p class="doc-desc">${escapeHtml(doc.desc || "No description added.")}</p>
         <div class="meta doc-extra">${(doc.tags || []).map(tag => `<span class="chip">${escapeHtml(tag)}</span>`).join("") || '<span class="chip">untagged</span>'}<span class="chip">${escapeHtml(doc.sensitivity || "Internal")}</span></div>
@@ -2806,6 +3007,30 @@
           <button class="btn red small" onclick="moveToTrash('${doc.id}')">Trash</button>
         </div>
       </article>`;
+    }
+
+    function docRow(doc) {
+      const ext = extension(doc.name);
+      const selected = selectedDocIds.includes(doc.id);
+      return `<div class="doc-row ${selected ? "selected" : ""}">
+        <div class="doc-row-main">
+          <label class="doc-check" title="Select document">
+            <input type="checkbox" ${selected ? "checked" : ""} onchange="toggleDocSelection('${doc.id}', this.checked)" aria-label="Select ${escapeAttr(doc.name)}">
+          </label>
+          <div class="doc-row-info">
+            <div class="doc-row-title"><span class="file-type" style="background:${fileColor(ext)}; width:30px; height:30px; display:inline-grid; margin-right:8px; vertical-align:middle;">${escapeHtml(ext || "file")}</span>${escapeHtml(doc.name)}</div>
+            <div class="meta"><span>${escapeHtml(displayFolderName(doc.folder))}</span><span>${formatSize(doc.size)}</span><span>${formatDate(doc.uploadedAt)}</span><span>${escapeHtml(doc.sensitivity || "Internal")}</span></div>
+          </div>
+        </div>
+        <div class="doc-row-actions">
+          <button class="btn ghost small" onclick="downloadDoc('${doc.id}')">Open</button>
+          <button class="btn orange small" onclick="downloadDoc('${doc.id}', true)">Download</button>
+          <button class="btn green small" onclick="openWhatsApp('${doc.id}')">WhatsApp</button>
+          <button class="btn ghost small" onclick="openMoveModal('file', '${doc.id}')">Move</button>
+          <button class="btn ghost small" onclick="renameDoc('${doc.id}')">Rename</button>
+          <button class="btn red small" onclick="moveToTrash('${doc.id}')">Trash</button>
+        </div>
+      </div>`;
     }
 
     function renderActivity() {
@@ -2860,7 +3085,7 @@
         <td><span class="chip">${escapeHtml(company.code)}</span></td>
         <td>${escapeHtml(company.email || "")}</td>
         <td>${escapeHtml(company.phone || "")}</td>
-        <td><div class="table-actions"><button class="btn ghost small" onclick="switchCompany('${company.id}')">Open</button></div></td>
+        <td><div class="table-actions"><button class="btn ghost small" onclick="switchCompany('${company.id}')">Open</button><button class="btn small" onclick="openCompanyEditor('${company.id}')">Edit</button></div></td>
       </tr>`).join("")}</tbody>`;
     }
 
@@ -2894,7 +3119,125 @@
       });
     }
 
+    function setDocView(mode) {
+      docViewMode = mode === "list" ? "list" : "cards";
+      localStorage.setItem("vaultDocViewMode", JSON.stringify(docViewMode));
+      render();
+    }
+
+    function visibleDocIds() {
+      const q = document.getElementById("searchInput").value.toLowerCase().trim();
+      return getVisibleDocs(Boolean(q)).map(doc => doc.id);
+    }
+
+    function pruneSelectedDocs() {
+      const existing = new Set(docs.map(doc => doc.id));
+      selectedDocIds = selectedDocIds.filter(id => existing.has(id));
+      localStorage.setItem("vaultSelectedDocIds", JSON.stringify(selectedDocIds));
+    }
+
+    function toggleDocSelection(id, checked) {
+      const selected = new Set(selectedDocIds);
+      if (checked) selected.add(id);
+      else selected.delete(id);
+      selectedDocIds = Array.from(selected);
+      localStorage.setItem("vaultSelectedDocIds", JSON.stringify(selectedDocIds));
+      renderDocs();
+    }
+
+    function selectVisibleDocs() {
+      const selected = new Set(selectedDocIds);
+      visibleDocIds().forEach(id => selected.add(id));
+      selectedDocIds = Array.from(selected);
+      localStorage.setItem("vaultSelectedDocIds", JSON.stringify(selectedDocIds));
+      renderDocs();
+    }
+
+    function clearDocSelection() {
+      selectedDocIds = [];
+      localStorage.setItem("vaultSelectedDocIds", JSON.stringify(selectedDocIds));
+      renderDocs();
+    }
+
+    function renderBulkActions() {
+      const bar = document.getElementById("bulkActionBar");
+      const count = document.getElementById("bulkCount");
+      const cardBtn = document.getElementById("cardViewBtn");
+      const listBtn = document.getElementById("listViewBtn");
+      if (cardBtn) cardBtn.classList.toggle("active", docViewMode === "cards");
+      if (listBtn) listBtn.classList.toggle("active", docViewMode === "list");
+      if (!bar || !count) return;
+      count.textContent = `${selectedDocIds.length} selected`;
+      bar.classList.toggle("hidden", selectedDocIds.length === 0);
+    }
+
+    async function bulkMoveToTrash() {
+      if (!hasPermission("deleteDocuments")) {
+        toast("Delete blocked for this user.");
+        return;
+      }
+      const selected = docs.filter(doc => selectedDocIds.includes(doc.id) && canManageFolderPath(doc.folder));
+      if (!selected.length) {
+        toast("Select documents from your allowed folders first.");
+        return;
+      }
+      if (!(await requireVaultPin(`Move ${selected.length} selected document(s) to trash`))) return;
+      const selectedSet = new Set(selected.map(doc => doc.id));
+      const deletedAt = Date.now();
+      selected.forEach(doc => trash.unshift({ ...doc, deletedAt }));
+      docs = docs.filter(doc => !selectedSet.has(doc.id));
+      addActivity("Bulk trash", `${selected.length} document(s) moved to trash`);
+      selectedDocIds = [];
+      save();
+      render();
+      toast(`${selected.length} document(s) moved to trash.`);
+    }
+
+    function setUploadBusy(busy) {
+      uploadInProgress = busy;
+      const submit = document.getElementById("uploadSubmitBtn");
+      if (submit) {
+        submit.disabled = busy;
+        submit.textContent = busy ? "Adding..." : "Add to vault";
+      }
+    }
+
+    function suggestedDuplicateName(name) {
+      const clean = String(name || "document").trim() || "document";
+      const dot = clean.lastIndexOf(".");
+      if (dot > 0) return `${clean.slice(0, dot)} (copy)${clean.slice(dot)}`;
+      return `${clean} (copy)`;
+    }
+
+    function documentNameExistsInFolder(name, folder, pendingNames = []) {
+      const targetName = String(name || "").trim().toLowerCase();
+      const targetFolder = displayFolderName(folder);
+      if (!targetName) return true;
+      return pendingNames.includes(targetName) || docs.some(doc =>
+        String(doc.name || "").trim().toLowerCase() === targetName &&
+        displayFolderName(doc.folder) === targetFolder
+      );
+    }
+
+    function resolveUploadName(originalName, folder, pendingNames) {
+      const clean = String(originalName || "document").trim();
+      if (!documentNameExistsInFolder(clean, folder, pendingNames)) return clean;
+      if (!hasPermission("editDocuments")) return "";
+      const proposed = prompt(`A file named "${clean}" already exists in ${displayFolderName(folder)}. Enter a new name to upload this duplicate, or cancel to skip.`, suggestedDuplicateName(clean));
+      if (!proposed) return "";
+      const nextName = proposed.trim();
+      if (!nextName || documentNameExistsInFolder(nextName, folder, pendingNames)) {
+        toast("Duplicate name skipped. Choose a unique name.");
+        return "";
+      }
+      return nextName;
+    }
+
     async function addFiles(files) {
+      if (uploadInProgress) {
+        toast("Upload already running. Please wait.");
+        return;
+      }
       if (!hasPermission("upload")) {
         toast("Upload blocked for this user.");
         return;
@@ -2932,46 +3275,65 @@
         toast("Blocked risky file type.");
         return;
       }
-      for (const file of items) {
-        let fileLink = link;
-        let fileId = "";
-        if (firebaseReady && firebaseStorage && currentUser) {
-          const storagePath = `vault_companies/${selectedCompanyId}/documents/${Date.now()}-${file.name}`;
-          const uploadSnap = await firebaseStorage.ref(storagePath).put(file);
-          fileLink = await uploadSnap.ref.getDownloadURL();
-        }
-        if (!fileLink && isLocalPreviewMode()) {
-          const uploaded = await uploadViaTaskApi(file);
-          if (uploaded?.driveUrl) {
-            fileLink = uploaded.driveUrl;
-            fileId = uploaded.fileId || "";
+      setUploadBusy(true);
+      const pendingNames = [];
+      const skipped = [];
+      let addedCount = 0;
+      try {
+        for (const file of items) {
+          const finalName = resolveUploadName(file.name, folder, pendingNames);
+          if (!finalName) {
+            skipped.push(file.name);
+            continue;
           }
+          pendingNames.push(finalName.toLowerCase());
+          let fileLink = link;
+          let fileId = "";
+          if (firebaseReady && firebaseStorage && currentUser) {
+            const storagePath = `vault_companies/${selectedCompanyId}/documents/${Date.now()}-${finalName}`;
+            const uploadSnap = await firebaseStorage.ref(storagePath).put(file);
+            fileLink = await uploadSnap.ref.getDownloadURL();
+          }
+          if (!fileLink && isLocalPreviewMode()) {
+            const uploaded = await uploadViaTaskApi(file);
+            if (uploaded?.driveUrl) {
+              fileLink = uploaded.driveUrl;
+              fileId = uploaded.fileId || "";
+            }
+          }
+          docs.unshift({
+          id: "doc-" + Date.now() + "-" + Math.random().toString(16).slice(2),
+          name: finalName,
+          folder,
+          size: file.size,
+          type: file.type,
+          desc,
+          tags,
+          sensitivity: folder === "HR" || folder === "GST" || folder.startsWith("HR/") || folder.startsWith("GST/") ? "Restricted" : "Internal",
+          link: fileLink,
+          fileId,
+          uploadedBy: currentUser?.email || "Kasera User",
+          uploadedByUid: currentUser?.uid || "local-preview-user",
+          uploadedByName: currentUser?.email || "Kasera User",
+          uploadedByEmail: currentUser?.email || "",
+          uploadedAt: Date.now()
+          });
+          addedCount += 1;
         }
-        docs.unshift({
-        id: "doc-" + Date.now() + "-" + Math.random().toString(16).slice(2),
-        name: file.name,
-        folder,
-        size: file.size,
-        type: file.type,
-        desc,
-        tags,
-        sensitivity: folder === "HR" || folder === "GST" || folder.startsWith("HR/") || folder.startsWith("GST/") ? "Restricted" : "Internal",
-        link: fileLink,
-        fileId,
-        uploadedBy: currentUser?.email || "Kasera User",
-        uploadedByUid: currentUser?.uid || "local-preview-user",
-        uploadedByName: currentUser?.email || "Kasera User",
-        uploadedByEmail: currentUser?.email || "",
-        uploadedAt: Date.now()
-        });
+      } finally {
+        setUploadBusy(false);
       }
-      addActivity("Upload", items.length + " document(s) added to " + folder);
+      if (!addedCount) {
+        toast(skipped.length ? "Duplicate upload skipped. Use a unique name." : "No document added.");
+        return;
+      }
+      addActivity("Upload", addedCount + " document(s) added to " + folder + (skipped.length ? `; ${skipped.length} duplicate(s) skipped` : ""));
       save();
       render();
       closeModal("uploadModal");
       document.getElementById("uploadForm").reset();
       updateUploadSummary();
-      toast("Document added to vault.");
+      toast(skipped.length ? `${addedCount} added, ${skipped.length} duplicate skipped.` : "Document added to vault.");
     }
 
     async function requireVaultPin(action) {
@@ -3004,6 +3366,7 @@
         return;
       }
       docs = docs.filter(item => item.id !== id);
+      selectedDocIds = selectedDocIds.filter(selectedId => selectedId !== id);
       trash.unshift({ ...doc, deletedAt: Date.now() });
       addActivity("Moved to trash", doc.name);
       save();
@@ -3444,14 +3807,48 @@
       toast("Switched to " + companyName(companyId));
     }
 
+    function openCompanyEditor(companyId = "") {
+      if (!hasPermission("manageCompanies")) {
+        toast("Company edit blocked for this user.");
+        return;
+      }
+      const company = companies.find(item => item.id === companyId);
+      document.getElementById("editingCompanyId").value = company?.id || "";
+      document.getElementById("companyModalTitle").textContent = company ? "Edit company" : "Create company";
+      document.getElementById("companySubmitBtn").textContent = company ? "Save Changes" : "Create";
+      document.getElementById("companyName").value = company?.name || "";
+      document.getElementById("companyCode").value = company?.code || "";
+      document.getElementById("companyEmail").value = company?.email || "";
+      document.getElementById("companyPhone").value = company?.phone || "";
+      openModal("companyModal");
+    }
+
     async function createCompany() {
       if (!hasPermission("manageCompanies")) {
         toast("Company creation blocked for this user.");
         return;
       }
+      const editingId = document.getElementById("editingCompanyId").value;
       const name = document.getElementById("companyName").value.trim();
       const code = document.getElementById("companyCode").value.trim().toUpperCase();
       if (!name || !code) return;
+      if (editingId) {
+        const company = companies.find(item => item.id === editingId);
+        if (!company) return;
+        company.name = name;
+        company.code = code;
+        company.email = document.getElementById("companyEmail").value.trim();
+        company.phone = document.getElementById("companyPhone").value.trim().replace(/[^0-9]/g, "");
+        company.updatedAt = Date.now();
+        await saveCompanyDirectory();
+        closeModal("companyModal");
+        document.getElementById("companyForm").reset();
+        document.getElementById("editingCompanyId").value = "";
+        addActivity("Company edited", name);
+        render();
+        toast("Company updated.");
+        return;
+      }
       if (!confirm(`Create company "${name}" now?`)) return;
       const id = code.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now().toString(36);
       const creatorProfile = activeUserProfile();
@@ -3719,6 +4116,10 @@
 
     document.getElementById("loginForm").addEventListener("submit", async event => {
       event.preventDefault();
+      if (!legalConsentAccepted()) {
+        document.getElementById("authStatus").textContent = "Please accept the data and legal consent before login.";
+        return;
+      }
       const status = document.getElementById("authStatus");
       const modalStatus = document.getElementById("loginModalStatus");
       const email = document.getElementById("loginEmail").value.trim();
@@ -3743,6 +4144,10 @@
     });
 
     document.getElementById("googleLoginBtn").addEventListener("click", async () => {
+      if (!legalConsentAccepted()) {
+        document.getElementById("authStatus").textContent = "Please accept the data and legal consent before Google login.";
+        return;
+      }
       const status = document.getElementById("authStatus");
       status.textContent = "Opening Google sign-in...";
       try {
@@ -3751,6 +4156,15 @@
       } catch (error) {
         status.textContent = error.message || "Google login failed.";
       }
+    });
+
+    document.getElementById("companyGateForm").addEventListener("submit", event => {
+      event.preventDefault();
+      const companyId = document.getElementById("loginCompanySelect").value;
+      closeModal("companyGateModal");
+      switchCompany(companyId);
+      finishVaultOpen(window.pendingLoginMessage || "Login successful");
+      window.pendingLoginMessage = "";
     });
 
     document.getElementById("openPinSetupLogin").addEventListener("click", () => openPinModal("login"));
@@ -3782,7 +4196,8 @@
         toast("Company creation blocked for this user.");
         return;
       }
-      openModal("companyModal");
+      document.getElementById("companyForm").reset();
+      openCompanyEditor("");
     });
     document.getElementById("newUserBtn").addEventListener("click", () => openUserEditor());
     document.getElementById("folderToggleBtn").addEventListener("click", toggleFolders);
@@ -3798,6 +4213,11 @@
     document.getElementById("lockFromSecurity").addEventListener("click", lockVault);
     document.getElementById("saveSecuritySettingsBtn").addEventListener("click", saveSecuritySettingsFromForm);
     document.getElementById("collapseCardsBtn").addEventListener("click", toggleCards);
+    document.getElementById("cardViewBtn").addEventListener("click", () => setDocView("cards"));
+    document.getElementById("listViewBtn").addEventListener("click", () => setDocView("list"));
+    document.getElementById("selectVisibleBtn").addEventListener("click", selectVisibleDocs);
+    document.getElementById("clearSelectionBtn").addEventListener("click", clearDocSelection);
+    document.getElementById("bulkTrashBtn").addEventListener("click", () => bulkMoveToTrash().catch(error => toast(error.message || "Bulk delete failed.")));
     document.getElementById("exportBtn").addEventListener("click", exportCsv);
     ["searchInput", "typeFilter", "sortFilter"].forEach(id => document.getElementById(id).addEventListener("input", render));
     document.getElementById("uploadForm").addEventListener("submit", event => {
