@@ -2935,17 +2935,17 @@
       for (const file of items) {
         let fileLink = link;
         let fileId = "";
-        if (!fileLink) {
+        if (firebaseReady && firebaseStorage && currentUser) {
+          const storagePath = `vault_companies/${selectedCompanyId}/documents/${Date.now()}-${file.name}`;
+          const uploadSnap = await firebaseStorage.ref(storagePath).put(file);
+          fileLink = await uploadSnap.ref.getDownloadURL();
+        }
+        if (!fileLink && isLocalPreviewMode()) {
           const uploaded = await uploadViaTaskApi(file);
           if (uploaded?.driveUrl) {
             fileLink = uploaded.driveUrl;
             fileId = uploaded.fileId || "";
           }
-        }
-        if (!fileLink && firebaseReady && firebaseStorage && currentUser) {
-          const storagePath = `vault_companies/${selectedCompanyId}/documents/${Date.now()}-${file.name}`;
-          const uploadSnap = await firebaseStorage.ref(storagePath).put(file);
-          fileLink = await uploadSnap.ref.getDownloadURL();
         }
         docs.unshift({
         id: "doc-" + Date.now() + "-" + Math.random().toString(16).slice(2),
